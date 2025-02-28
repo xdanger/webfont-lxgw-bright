@@ -1,0 +1,36 @@
+{
+    "name": "webfont-lxgw-bright",
+    "version": "5.510",
+    "description": "Webfont provider for LXGW-Bright with split font files",
+    "main": "scripts/build-fonts.js",
+    "files": [
+        "index.css",
+        "index.js",
+        "fonts",
+        "scripts/build-fonts.js",
+        "src/cli.js"
+    ],
+    "bin": {
+        "webfont-lxgw-bright": "src/cli.js"
+    },
+    "scripts": {
+        "dev:build-fonts": "node scripts/build-fonts.js",
+        "prepublishOnly": "npm run dev:build-fonts"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "fontkit": "^2.0.2"
+    },
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "keywords": [
+        "webfont",
+        "font",
+        "chinese",
+        "lxgw",
+        "bright"
+    ],
+    "author": "",
+    "license": "MIT"
+}

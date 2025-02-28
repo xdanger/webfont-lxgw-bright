@@ -3,7 +3,7 @@
     // "name": "<>",
     // Use a basic core Linux image as basic template.
     // See https://containers.dev/templates for all containers(base)
-    "image": "mcr.microsoft.com/devcontainers/base:debian",
+    "image": "ghcr.io/devcontainers/templates/debian:3.0.2",
     // "build": {
     //     "context": "..",
     //     "dockerfile": "Dockerfile",
@@ -22,7 +22,6 @@
             "installOhMyZsh": true
         },
         // "ghcr.io/devcontainers/features/conda:1": {},
-        // "ghcr.io/devcontainers/features/node:1": {},
         // "ghcr.io/devcontainers/features/docker-in-docker:2": {},
         // "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
         // "ghcr.io/devcontainers/features/dotnet:1": {},
@@ -35,7 +34,7 @@
         // "ghcr.io/devcontainers/features/java:1": {},
         // "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
         // "ghcr.io/devcontainers/features/nix:1": {},
-        // "ghcr.io/devcontainers/features/node:1": {},
+        "ghcr.io/devcontainers/features/node:1": {},
         // "ghcr.io/devcontainers/features/nvidia-cuda:1": {
         //     "installCudnn": true,
         //     "installNvtx": true
