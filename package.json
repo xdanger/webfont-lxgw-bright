@@ -18,9 +18,7 @@
         "prepublishOnly": "npm run dev:build-fonts"
     },
     "dependencies": {},
-    "devDependencies": {
-        "fontkit": "^2.0.2"
-    },
+    "devDependencies": {},
     "engines": {
         "node": ">=14.0.0"
     },

@@ -13,10 +13,20 @@ const { execSync } = require('child_process');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 
+// =======================================================
+// Public API & Constants
+// =======================================================
+
 // Font family constants
 const LXGWBright = 'LXGWBright';
 
-// Helper function to configure font
+/**
+ * Helper function to configure font
+ * @param {Object} options Font options
+ * @param {string} options.weight Font weight (default: '400')
+ * @param {string} options.style Font style (default: 'normal')
+ * @returns {Object} Font configuration
+ */
 function configureLXGWBright(options = {}) {
   const { weight = '400', style = 'normal' } = options;
 
@@ -27,7 +37,10 @@ function configureLXGWBright(options = {}) {
   };
 }
 
-// Shared configuration
+// =======================================================
+// Shared Configuration
+// =======================================================
+
 const PACKAGE_ROOT = path.join(__dirname, '..');
 const FONTS_DIR = path.join(PACKAGE_ROOT, 'fonts');
 const CSS_FILE = path.join(PACKAGE_ROOT, 'index.css');
@@ -37,93 +50,24 @@ const SRC_FONTS_DIR = path.join(PACKAGE_ROOT, 'src-fonts');
 const TEMP_DIR = path.join(PACKAGE_ROOT, 'temp');
 const MAX_CHUNK_SIZE = 350 * 1024; // 350KB in bytes
 
-// Ensure directories exist
+// =======================================================
+// Helper Functions
+// =======================================================
+
+/**
+ * Ensure directories exist
+ */
 function ensureDirectories() {
   if (!fs.existsSync(FONTS_DIR)) {
     fs.mkdirSync(FONTS_DIR, { recursive: true });
-    console.log(`Created directory: ${FONTS_DIR}`);
+    console.log(`📁 Created directory: ${FONTS_DIR}`);
   }
 
   if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
-    console.log(`Created temp directory: ${TEMP_DIR}`);
+    console.log(`📁 Created temp directory: ${TEMP_DIR}`);
   }
 }
-
-// Unicode block ranges for splitting
-const unicodeRanges = [
-  // Basic ranges (Latin, European, etc.)
-  { name: 'Basic Latin', start: 0x0000, end: 0x007F },
-  { name: 'Latin-1 Supplement', start: 0x0080, end: 0x00FF },
-  { name: 'Latin Extended-A', start: 0x0100, end: 0x017F },
-  { name: 'Latin Extended-B', start: 0x0180, end: 0x024F },
-  { name: 'IPA Extensions', start: 0x0250, end: 0x02AF },
-  { name: 'Spacing Modifier Letters', start: 0x02B0, end: 0x02FF },
-  { name: 'Combining Diacritical Marks', start: 0x0300, end: 0x036F },
-  { name: 'Greek and Coptic', start: 0x0370, end: 0x03FF },
-  { name: 'Cyrillic', start: 0x0400, end: 0x04FF },
-  { name: 'Cyrillic Supplement', start: 0x0500, end: 0x052F },
-  { name: 'General Punctuation', start: 0x2000, end: 0x206F },
-
-  // CJK Symbols and Japanese syllabaries
-  { name: 'CJK Symbols and Punctuation', start: 0x3000, end: 0x303F },
-  { name: 'Hiragana', start: 0x3040, end: 0x309F },
-  { name: 'Katakana', start: 0x30A0, end: 0x30FF },
-
-  // CJK Extensions - divided into smaller chunks
-  { name: 'CJK Unified Ideographs Extension A', start: 0x3400, end: 0x3BFF },
-  { name: 'CJK Unified Ideographs Extension A 2', start: 0x3C00, end: 0x4DBF },
-
-  // CJK Unified Ideographs - divided into many smaller chunks for more granular control
-  { name: 'CJK Unified Ideographs 1-1', start: 0x4E00, end: 0x4FFF },
-  { name: 'CJK Unified Ideographs 1-2', start: 0x5000, end: 0x51FF },
-  { name: 'CJK Unified Ideographs 1-3', start: 0x5200, end: 0x53FF },
-  { name: 'CJK Unified Ideographs 1-4', start: 0x5400, end: 0x55FF },
-  { name: 'CJK Unified Ideographs 1-5', start: 0x5600, end: 0x57FF },
-  { name: 'CJK Unified Ideographs 1-6', start: 0x5800, end: 0x59FF },
-  { name: 'CJK Unified Ideographs 1-7', start: 0x5A00, end: 0x5BFF },
-  { name: 'CJK Unified Ideographs 1-8', start: 0x5C00, end: 0x5DFF },
-  { name: 'CJK Unified Ideographs 1-9', start: 0x5E00, end: 0x5FFF },
-
-  { name: 'CJK Unified Ideographs 2-1', start: 0x6000, end: 0x61FF },
-  { name: 'CJK Unified Ideographs 2-2', start: 0x6200, end: 0x63FF },
-  { name: 'CJK Unified Ideographs 2-3', start: 0x6400, end: 0x65FF },
-  { name: 'CJK Unified Ideographs 2-4', start: 0x6600, end: 0x67FF },
-  { name: 'CJK Unified Ideographs 2-5', start: 0x6800, end: 0x69FF },
-  { name: 'CJK Unified Ideographs 2-6', start: 0x6A00, end: 0x6BFF },
-  { name: 'CJK Unified Ideographs 2-7', start: 0x6C00, end: 0x6DFF },
-  { name: 'CJK Unified Ideographs 2-8', start: 0x6E00, end: 0x6FFF },
-
-  { name: 'CJK Unified Ideographs 3-1', start: 0x7000, end: 0x71FF },
-  { name: 'CJK Unified Ideographs 3-2', start: 0x7200, end: 0x73FF },
-  { name: 'CJK Unified Ideographs 3-3', start: 0x7400, end: 0x75FF },
-  { name: 'CJK Unified Ideographs 3-4', start: 0x7600, end: 0x77FF },
-  { name: 'CJK Unified Ideographs 3-5', start: 0x7800, end: 0x79FF },
-  { name: 'CJK Unified Ideographs 3-6', start: 0x7A00, end: 0x7BFF },
-  { name: 'CJK Unified Ideographs 3-7', start: 0x7C00, end: 0x7DFF },
-  { name: 'CJK Unified Ideographs 3-8', start: 0x7E00, end: 0x7FFF },
-
-  { name: 'CJK Unified Ideographs 4-1', start: 0x8000, end: 0x81FF },
-  { name: 'CJK Unified Ideographs 4-2', start: 0x8200, end: 0x83FF },
-  { name: 'CJK Unified Ideographs 4-3', start: 0x8400, end: 0x85FF },
-  { name: 'CJK Unified Ideographs 4-4', start: 0x8600, end: 0x87FF },
-  { name: 'CJK Unified Ideographs 4-5', start: 0x8800, end: 0x89FF },
-  { name: 'CJK Unified Ideographs 4-6', start: 0x8A00, end: 0x8BFF },
-  { name: 'CJK Unified Ideographs 4-7', start: 0x8C00, end: 0x8DFF },
-  { name: 'CJK Unified Ideographs 4-8', start: 0x8E00, end: 0x8FFF },
-
-  { name: 'CJK Unified Ideographs 5-1', start: 0x9000, end: 0x91FF },
-  { name: 'CJK Unified Ideographs 5-2', start: 0x9200, end: 0x93FF },
-  { name: 'CJK Unified Ideographs 5-3', start: 0x9400, end: 0x95FF },
-  { name: 'CJK Unified Ideographs 5-4', start: 0x9600, end: 0x97FF },
-  { name: 'CJK Unified Ideographs 5-5', start: 0x9800, end: 0x99FF },
-  { name: 'CJK Unified Ideographs 5-6', start: 0x9A00, end: 0x9BFF },
-  { name: 'CJK Unified Ideographs 5-7', start: 0x9C00, end: 0x9DFF },
-  { name: 'CJK Unified Ideographs 5-8', start: 0x9E00, end: 0x9FFF },
-
-  // Other CJK blocks
-  { name: 'CJK Compatibility Ideographs', start: 0xF900, end: 0xFAFF },
-];
 
 /**
  * Check if pyftsubset is installed
@@ -158,204 +102,244 @@ function getFontWeight(fontName) {
   return 400; // Regular
 }
 
+// =======================================================
+// Unicode Ranges
+// =======================================================
+
+// Unicode block ranges for splitting
+const unicodeRanges = [
+  // Basic ranges (Latin, European, etc.)
+  { name: 'Basic Latin', range: 'U+0000-007F' },
+  { name: 'Latin-1 Supplement', range: 'U+0080-00FF' },
+  { name: 'Latin Extended-A', range: 'U+0100-017F' },
+  { name: 'Latin Extended-B', range: 'U+0180-024F' },
+  { name: 'IPA Extensions', range: 'U+0250-02AF' },
+  { name: 'Spacing Modifier Letters', range: 'U+02B0-02FF' },
+  { name: 'Combining Diacritical Marks', range: 'U+0300-036F' },
+  { name: 'Greek and Coptic', range: 'U+0370-03FF' },
+  { name: 'Cyrillic', range: 'U+0400-04FF' },
+  { name: 'Cyrillic Supplement', range: 'U+0500-052F' },
+  { name: 'General Punctuation', range: 'U+2000-206F' },
+
+  // CJK Symbols and Japanese syllabaries
+  { name: 'CJK Symbols and Punctuation', range: 'U+3000-303F' },
+  { name: 'Hiragana', range: 'U+3040-309F' },
+  { name: 'Katakana', range: 'U+30A0-30FF' },
+
+  // CJK Extensions - divided into smaller chunks
+  { name: 'CJK Unified Ideographs Extension A', range: 'U+3400-3BFF' },
+  { name: 'CJK Unified Ideographs Extension A 2', range: 'U+3C00-4DBF' },
+
+  // CJK Unified Ideographs - divided into many smaller chunks for more granular control
+  { name: 'CJK Unified Ideographs 1-1', range: 'U+4E00-4FFF' },
+  { name: 'CJK Unified Ideographs 1-2', range: 'U+5000-51FF' },
+  { name: 'CJK Unified Ideographs 1-3', range: 'U+5200-53FF' },
+  { name: 'CJK Unified Ideographs 1-4', range: 'U+5400-55FF' },
+  { name: 'CJK Unified Ideographs 1-5', range: 'U+5600-57FF' },
+  { name: 'CJK Unified Ideographs 1-6', range: 'U+5800-59FF' },
+  { name: 'CJK Unified Ideographs 1-7', range: 'U+5A00-5BFF' },
+  { name: 'CJK Unified Ideographs 1-8', range: 'U+5C00-5DFF' },
+  { name: 'CJK Unified Ideographs 1-9', range: 'U+5E00-5FFF' },
+
+  { name: 'CJK Unified Ideographs 2-1', range: 'U+6000-61FF' },
+  { name: 'CJK Unified Ideographs 2-2', range: 'U+6200-63FF' },
+  { name: 'CJK Unified Ideographs 2-3', range: 'U+6400-65FF' },
+  { name: 'CJK Unified Ideographs 2-4', range: 'U+6600-67FF' },
+  { name: 'CJK Unified Ideographs 2-5', range: 'U+6800-69FF' },
+  { name: 'CJK Unified Ideographs 2-6', range: 'U+6A00-6BFF' },
+  { name: 'CJK Unified Ideographs 2-7', range: 'U+6C00-6DFF' },
+  { name: 'CJK Unified Ideographs 2-8', range: 'U+6E00-6FFF' },
+
+  { name: 'CJK Unified Ideographs 3-1', range: 'U+7000-71FF' },
+  { name: 'CJK Unified Ideographs 3-2', range: 'U+7200-73FF' },
+  { name: 'CJK Unified Ideographs 3-3', range: 'U+7400-75FF' },
+  { name: 'CJK Unified Ideographs 3-4', range: 'U+7600-77FF' },
+  { name: 'CJK Unified Ideographs 3-5', range: 'U+7800-79FF' },
+  { name: 'CJK Unified Ideographs 3-6', range: 'U+7A00-7BFF' },
+  { name: 'CJK Unified Ideographs 3-7', range: 'U+7C00-7DFF' },
+  { name: 'CJK Unified Ideographs 3-8', range: 'U+7E00-7FFF' },
+
+  { name: 'CJK Unified Ideographs 4-1', range: 'U+8000-81FF' },
+  { name: 'CJK Unified Ideographs 4-2', range: 'U+8200-83FF' },
+  { name: 'CJK Unified Ideographs 4-3', range: 'U+8400-85FF' },
+  { name: 'CJK Unified Ideographs 4-4', range: 'U+8600-87FF' },
+  { name: 'CJK Unified Ideographs 4-5', range: 'U+8800-89FF' },
+  { name: 'CJK Unified Ideographs 4-6', range: 'U+8A00-8BFF' },
+  { name: 'CJK Unified Ideographs 4-7', range: 'U+8C00-8DFF' },
+  { name: 'CJK Unified Ideographs 4-8', range: 'U+8E00-8FFF' },
+
+  { name: 'CJK Unified Ideographs 5-1', range: 'U+9000-91FF' },
+  { name: 'CJK Unified Ideographs 5-2', range: 'U+9200-93FF' },
+  { name: 'CJK Unified Ideographs 5-3', range: 'U+9400-95FF' },
+  { name: 'CJK Unified Ideographs 5-4', range: 'U+9600-97FF' },
+  { name: 'CJK Unified Ideographs 5-5', range: 'U+9800-99FF' },
+  { name: 'CJK Unified Ideographs 5-6', range: 'U+9A00-9BFF' },
+  { name: 'CJK Unified Ideographs 5-7', range: 'U+9C00-9DFF' },
+  { name: 'CJK Unified Ideographs 5-8', range: 'U+9E00-9FFF' },
+
+  // Other CJK blocks
+  { name: 'CJK Compatibility Ideographs', range: 'U+F900-FAFF' },
+];
+
+// =======================================================
+// Font Subsetting Functions
+// =======================================================
+
 /**
- * Create a subset of a font for specific unicode ranges
+ * Create a font subset using pyftsubset
+ * @param {string} fontPath Path to the font file
+ * @param {string} unicodeRange Unicode range to include
+ * @param {string} outputPath Path to save the subset font
+ * @returns {boolean} Whether the subset was created successfully
  */
 async function createFontSubset(fontPath, unicodeRange, outputPath) {
-  const format = path.extname(fontPath).substring(1);
-
-  // Create unicode range argument for pyftsubset
-  const unicodes = unicodeRange.map(range => {
-    return `U+${range.start.toString(16).toUpperCase()}-${range.end.toString(16).toUpperCase()}`;
-  }).join(',');
-
-  // Build the pyftsubset command - add layout features to preserve font behavior
-  const command = `pyftsubset "${fontPath}" --unicodes="${unicodes}" --output-file="${outputPath}" --flavor=${format} --layout-features='*'`;
-
   try {
-    await exec(command);
+    // Extract format from file extension
+    const format = path.extname(fontPath).substring(1).toLowerCase();
 
-    // Verify the subset was created and is valid
-    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
+    // Check if format is supported
+    if (!['woff', 'woff2'].includes(format)) {
+      console.error(`❌ Unsupported font format: ${format}`);
+      return false;
+    }
+
+    console.log(`📋 Creating subset with format: ${format.toUpperCase()} → ${format.toUpperCase()} (source → target)`);
+
+    // Create the subset command
+    const command = `pyftsubset "${fontPath}" --unicodes="${unicodeRange}" --output-file="${outputPath}" --flavor=${format} --layout-features='*'`;
+
+    // For debugging
+    console.log(`🔧 Command: ${command}`);
+
+    // Execute the command
+    const { stdout, stderr } = await exec(command);
+
+    if (stderr && stderr.includes('error')) {
+      console.error(`⚠️ Warning during subsetting: ${stderr}`);
+    }
+
+    if (stdout && stdout.trim()) {
+      console.log(`ℹ️ Subsetting output: ${stdout.trim()}`);
+    }
+
+    // Verify file exists and check its format
+    if (fs.existsSync(outputPath)) {
+      const outputFormat = path.extname(outputPath).substring(1).toLowerCase();
+      console.log(`✓ Format preserved: ${format.toUpperCase()} → ${outputFormat.toUpperCase()}`);
       return true;
     } else {
-      console.error(`❌ Subsetting failed: Output file is empty or missing: ${outputPath}`);
+      console.error(`❌ Failed to create subset file: ${outputPath}`);
       return false;
     }
   } catch (error) {
     console.error(`❌ Error creating subset: ${error.message}`);
+    if (error.stderr) {
+      console.error(`📜 Command output: ${error.stderr}`);
+    }
     return false;
   }
 }
 
 /**
- * Process a font file to create subsets
+ * Process a single font file
+ * @param {string} fontPath Path to the font file
+ * @returns {Array} Font entries
  */
 async function processFont(fontPath) {
-  const fontFileName = path.basename(fontPath);
-  const fontFileExtension = path.extname(fontPath).substring(1); // Remove the dot
-  const fontNameWithoutExtension = path.basename(fontPath, path.extname(fontPath));
-
-  // Skip if not woff or woff2
-  if (!['woff', 'woff2'].includes(fontFileExtension)) {
-    console.log(`⏩ Skipping ${fontFileName} - not a woff/woff2 file`);
-    return null;
-  }
-
-  const fontBuffer = fs.readFileSync(fontPath);
-  const fontFileSize = fontBuffer.length;
-
-  // If font is less than 1MB, just copy it
-  if (fontFileSize < 1024 * 1024) {
-    const outputPath = path.join(FONTS_DIR, fontFileName);
-    fs.writeFileSync(outputPath, fontBuffer);
-    console.log(`✓ Font ${fontFileName} is less than 1MB. Copied without splitting.`);
-    return {
-      fontFamily: fontNameWithoutExtension.split('-')[0],
-      fontStyle: fontNameWithoutExtension.includes('Italic') ? 'italic' : 'normal',
-      fontWeight: getFontWeight(fontNameWithoutExtension),
-      format: fontFileExtension,
-      src: `fonts/${fontFileName}`,
-      unicodeRange: null,
-      index: null
-    };
-  }
-
-  // For fonts > 1MB, we need to analyze and split
-  console.log(`🔄 Processing ${fontFileName} (${(fontFileSize / 1024 / 1024).toFixed(2)}MB)...`);
-
   try {
-    // Filter unicode ranges to only include those likely to be in a CJK font
-    const relevantRanges = unicodeRanges.filter(range => {
-      // Include common ranges and CJK ranges
-      return range.start < 0x1000 || range.start >= 0x3000;
-    });
+    const fontFileName = path.basename(fontPath);
+    const fontFileExtension = path.extname(fontPath).substring(1).toLowerCase();
+    const fontNameWithoutExtension = path.basename(fontPath, path.extname(fontPath));
 
-    // Calculate target size for each chunk (aim for chunks around 300-400KB)
-    const targetChunkSize = 350 * 1024; // 350KB target
-    const totalRanges = relevantRanges.length;
+    console.log(`\n🔤 Processing font: ${fontFileName}`);
+    console.log(`📝 Format: ${fontFileExtension.toUpperCase()}`);
 
-    // Estimate number of chunks needed based on font size
-    const estimatedChunks = Math.ceil(fontFileSize / targetChunkSize);
-    const rangesPerChunk = Math.ceil(totalRanges / estimatedChunks);
+    // Start timing the processing
+    const startTime = Date.now();
 
-    console.log(`📏 Targeting ~${rangesPerChunk} unicode ranges per chunk, aiming for ~${(targetChunkSize / 1024).toFixed(0)}KB chunks`);
+    // Each subset range will become a separate file
+    let entries = [];
 
-    // Group ranges into chunks
-    const chunks = [];
-    let currentChunk = [];
+    // Split font into chunks
+    for (let i = 0; i < unicodeRanges.length; i++) {
+      const range = unicodeRanges[i];
+      const outPath = path.join(
+        FONTS_DIR,
+        `${fontNameWithoutExtension}.${i}.${fontFileExtension}`
+      );
 
-    for (let i = 0; i < relevantRanges.length; i++) {
-      currentChunk.push(relevantRanges[i]);
+      console.log(`\n⏳ Creating subset ${i + 1}/${unicodeRanges.length}: ${range.name}`);
+      console.log(`👉 Unicode range: ${range.range}`);
+      console.log(`🔠 Output format: ${fontFileExtension.toUpperCase()}`);
 
-      // Create a new chunk when we reach the target number of ranges
-      // or when we're at the last range
-      if (currentChunk.length >= rangesPerChunk || i === relevantRanges.length - 1) {
-        if (currentChunk.length > 0) {
-          chunks.push([...currentChunk]);
-          currentChunk = [];
-        }
-      }
-    }
+      const result = await createFontSubset(fontPath, range.range, outPath);
 
-    console.log(`✓ Created ${chunks.length} chunks for subsetting`);
+      if (result) {
+        const fontSizeKb = (fs.statSync(outPath).size / 1024).toFixed(2);
+        console.log(`✅ Created: ${path.basename(outPath)} (${fontSizeKb}KB)`);
 
-    // Process each chunk and create subset font files
-    const fontEntries = [];
-
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      const outputFileName = `${fontNameWithoutExtension}.${i}.${fontFileExtension}`;
-      const outputPath = path.join(FONTS_DIR, outputFileName);
-
-      // Create unicode range string for CSS
-      const unicodeRangeStr = chunk.map(range =>
-        `U+${range.start.toString(16).padStart(4, '0')}-${range.end.toString(16).padStart(4, '0')}`
-      ).join(', ');
-
-      // Create actual font subset
-      console.log(`🔄 Creating subset ${i + 1}/${chunks.length}: ${unicodeRangeStr}`);
-      const success = await createFontSubset(fontPath, chunk, outputPath);
-
-      if (success) {
-        // Verify the size of the subset file
-        const subsetSize = fs.statSync(outputPath).size;
-        console.log(`✓ Created subset ${outputFileName} (${(subsetSize / 1024).toFixed(2)}KB)`);
-
-        fontEntries.push({
-          fontFamily: fontNameWithoutExtension.split('-')[0],
-          fontStyle: fontNameWithoutExtension.includes('Italic') ? 'italic' : 'normal',
-          fontWeight: getFontWeight(fontNameWithoutExtension),
-          format: fontFileExtension,
-          src: `fonts/${outputFileName}`,
-          unicodeRange: unicodeRangeStr,
-          index: i
+        entries.push({
+          subset: i,
+          unicodeRange: range.range,
+          path: path.basename(outPath),
+          name: fontNameWithoutExtension,
+          format: fontFileExtension
         });
-      } else {
-        console.error(`❌ Failed to create subset ${outputFileName}`);
-
-        // Try an alternative approach
-        try {
-          console.log(`🔄 Attempting alternative method for ${outputFileName}...`);
-          // Try with direct unicode-range specification
-          const rangeArgs = chunk.map(range =>
-            `U+${range.start.toString(16).toUpperCase()}-${range.end.toString(16).toUpperCase()}`
-          ).join(',');
-
-          const command = `pyftsubset "${fontPath}" --unicodes="${rangeArgs}" --output-file="${outputPath}" --flavor=${fontFileExtension} --layout-features='*'`;
-
-          await exec(command);
-
-          if (fs.existsSync(outputPath)) {
-            const subsetSize = fs.statSync(outputPath).size;
-            console.log(`✓ Created subset with direct method ${outputFileName} (${(subsetSize / 1024).toFixed(2)}KB)`);
-
-            fontEntries.push({
-              fontFamily: fontNameWithoutExtension.split('-')[0],
-              fontStyle: fontNameWithoutExtension.includes('Italic') ? 'italic' : 'normal',
-              fontWeight: getFontWeight(fontNameWithoutExtension),
-              format: fontFileExtension,
-              src: `fonts/${outputFileName}`,
-              unicodeRange: unicodeRangeStr,
-              index: i
-            });
-          }
-        } catch (altError) {
-          console.error(`❌ Alternative subsetting method failed for ${outputFileName}:`, altError.message);
-        }
       }
     }
 
-    console.log(`✅ Split ${fontFileName} into ${fontEntries.length} chunks`);
-    return fontEntries;
+    // Calculate processing time
+    const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`\n✨ Completed processing ${fontFileName} in ${processingTime} seconds`);
+    console.log(`📦 Created ${entries.length} subset files`);
+
+    return entries;
   } catch (error) {
-    console.error(`❌ Error processing ${fontFileName}:`, error);
+    console.error(`❌ Error processing font ${fontPath}:`, error);
     return null;
   }
 }
+
+// =======================================================
+// CSS Generation
+// =======================================================
 
 /**
  * Generate CSS with @font-face declarations
  */
 function generateCSS(fontEntries) {
+  console.log(`\n🎨 Generating CSS file with @font-face declarations...`);
   let css = '/* LXGW Bright Webfont */\n\n';
 
-  // Group font entries by fontFamily, fontWeight, and fontStyle
-  const fontGroups = {};
+  // Process and normalize entries first
+  const processedEntries = fontEntries.map(entry => {
+    // Extract font metadata from the font name
+    const nameParts = entry.name.split('-');
+    const fontFamily = nameParts[0];
+    const fontStyle = entry.name.toLowerCase().includes('italic') ? 'italic' : 'normal';
+    const fontWeight = getFontWeight(entry.name);
 
-  fontEntries.forEach(entry => {
-    if (Array.isArray(entry)) {
-      entry.forEach(subEntry => {
-        const key = `${subEntry.fontFamily}-${subEntry.fontWeight}-${subEntry.fontStyle}`;
-        if (!fontGroups[key]) fontGroups[key] = [];
-        fontGroups[key].push(subEntry);
-      });
-    } else if (entry) {
-      const key = `${entry.fontFamily}-${entry.fontWeight}-${entry.fontStyle}`;
-      if (!fontGroups[key]) fontGroups[key] = [];
-      fontGroups[key].push(entry);
-    }
+    return {
+      fontFamily,
+      fontWeight,
+      fontStyle,
+      unicodeRange: entry.unicodeRange,
+      src: `fonts/${entry.path}`,
+      format: entry.format,
+      index: entry.subset
+    };
   });
+
+  // Group by font properties
+  const fontGroups = {};
+  processedEntries.forEach(entry => {
+    const key = `${entry.fontFamily}-${entry.fontWeight}-${entry.fontStyle}`;
+    if (!fontGroups[key]) fontGroups[key] = [];
+    fontGroups[key].push(entry);
+  });
+
+  // Count the number of font face declarations
+  let fontFaceCount = 0;
 
   // Generate @font-face declarations for each font group
   Object.values(fontGroups).forEach(group => {
@@ -363,42 +347,31 @@ function generateCSS(fontEntries) {
 
     const { fontFamily, fontWeight, fontStyle } = group[0];
 
-    // For unsplit fonts (no unicode range)
-    const unsplitFonts = group.filter(entry => !entry.unicodeRange);
-    if (unsplitFonts.length > 0) {
+    // Log group info
+    console.log(`📝 Creating @font-face rules for: ${fontFamily} (weight: ${fontWeight}, style: ${fontStyle})`);
+    console.log(`   Generating ${group.length} subset declarations`);
+
+    // For each font subset
+    group.forEach(entry => {
       css += `@font-face {\n`;
-      css += `    font-family: '${fontFamily}';\n`;
-      css += `    font-style: ${fontStyle};\n`;
-      css += `    font-weight: ${fontWeight};\n`;
-      css += `    src: `;
-
-      const srcEntries = unsplitFonts.map(entry => {
-        return `url('./${entry.src}') format('${entry.format}')`;
-      });
-
-      css += srcEntries.join(',\n       ') + ';\n';
+      css += `  font-family: '${fontFamily}';\n`;
+      css += `  font-style: ${fontStyle};\n`;
+      css += `  font-weight: ${fontWeight};\n`;
+      css += `  src: url('./${entry.src}') format('${entry.format}');\n`;
+      css += `  unicode-range: ${entry.unicodeRange};\n`;
       css += `}\n\n`;
-    }
-
-    // For split fonts (with unicode range)
-    const splitFonts = group.filter(entry => entry.unicodeRange);
-    if (splitFonts.length > 0) {
-      // Create a font-face declaration for each split file
-      splitFonts.forEach(entry => {
-        css += `@font-face {\n`;
-        css += `    font-family: '${fontFamily}';\n`;
-        css += `    font-style: ${fontStyle};\n`;
-        css += `    font-weight: ${fontWeight};\n`;
-        css += `    src: url('./${entry.src}') format('${entry.format}');\n`;
-        css += `    unicode-range: ${entry.unicodeRange};\n`;
-        css += `}\n\n`;
-      });
-    }
+      fontFaceCount++;
+    });
   });
 
   fs.writeFileSync(CSS_FILE, css);
   console.log(`✅ Generated CSS at ${CSS_FILE}`);
+  console.log(`   Created ${fontFaceCount} @font-face declarations`);
 }
+
+// =======================================================
+// Main Build Function
+// =======================================================
 
 /**
  * Build fonts - process all font files and generate CSS
@@ -450,13 +423,35 @@ async function buildFonts() {
       process.exit(1);
     }
 
-    console.log(`📦 Found ${fontFiles.length} font files to process`);
+    // Count fonts by format
+    const woffFiles = fontFiles.filter(file => file.toLowerCase().endsWith('.woff'));
+    const woff2Files = fontFiles.filter(file => file.toLowerCase().endsWith('.woff2'));
+
+    console.log('\n📊 Font Format Statistics:');
+    console.log(`- WOFF  files: ${woffFiles.length}`);
+    console.log(`- WOFF2 files: ${woff2Files.length}`);
+    console.log(`- Total files: ${fontFiles.length}\n`);
+
+    console.log(`📦 Starting processing of ${fontFiles.length} font files...`);
 
     // Process each font
     const fontEntries = [];
+    const formatSummary = {
+      woff: { inputs: 0, outputs: 0 },
+      woff2: { inputs: 0, outputs: 0 }
+    };
+
     for (const fontPath of fontFiles) {
+      const format = path.extname(fontPath).substring(1).toLowerCase();
+      formatSummary[format].inputs++;
+
       const entries = await processFont(fontPath);
       if (entries) {
+        if (Array.isArray(entries)) {
+          formatSummary[format].outputs += entries.length;
+        } else {
+          formatSummary[format].outputs++;
+        }
         fontEntries.push(entries);
       }
     }
@@ -464,6 +459,15 @@ async function buildFonts() {
     // Generate CSS
     generateCSS(fontEntries.flat());
 
+    console.log('\n📊 Processing Summary:');
+    console.log('---------------------');
+    console.log('Input files:');
+    console.log(`- WOFF:  ${formatSummary.woff.inputs} files`);
+    console.log(`- WOFF2: ${formatSummary.woff2.inputs} files`);
+    console.log('\nOutput files (after subsetting):');
+    console.log(`- WOFF:  ${formatSummary.woff.outputs} files`);
+    console.log(`- WOFF2: ${formatSummary.woff2.outputs} files`);
+    console.log(`- Total: ${formatSummary.woff.outputs + formatSummary.woff2.outputs} files`);
     console.log('\n✅ Font processing complete!');
     console.log('The processed font files and CSS are ready for distribution.');
   } catch (error) {
@@ -471,6 +475,10 @@ async function buildFonts() {
     process.exit(1);
   }
 }
+
+// =======================================================
+// CLI Tool
+// =======================================================
 
 /**
  * CLI tool - copy font files to user's project
@@ -516,22 +524,26 @@ function runCliTool() {
   }
 }
 
-// Determine whether we're running as a build script or CLI
+// =======================================================
+// Module Entry Point
+// =======================================================
+
+// If this script is run directly
 if (require.main === module) {
-  // Running directly from command line
-  if (process.argv[1].includes('build-fonts')) {
-    // Running as build script
-    buildFonts();
-  } else {
-    // Running as CLI tool
+  // Check if it's being run as a CLI tool
+  const isCliTool = process.argv[1].includes('cli');
+
+  if (isCliTool) {
     runCliTool();
+  } else {
+    buildFonts();
   }
-} else {
-  // Being required as a module
-  module.exports = {
-    buildFonts,
-    runCliTool,
-    LXGWBright,
-    configureLXGWBright
-  };
 }
+
+// Export the public API
+module.exports = {
+  LXGWBright,
+  configureLXGWBright,
+  buildFonts,
+  runCliTool
+};
