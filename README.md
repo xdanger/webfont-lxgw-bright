@@ -58,6 +58,103 @@ npx xdanger/webfont-lxgw-bright
 
 这将把字体文件和CSS复制到你项目中的`fonts`目录。
 
+### 选项4: 在React项目中使用
+
+在React项目中有多种方式使用这个字体：
+
+#### 方法1: 在入口文件中导入CSS
+
+在你的应用入口文件(如`src/index.js`或`src/App.jsx`)中:
+
+```javascript
+// 导入字体CSS
+import 'webfont-lxgw-bright';
+
+function App() {
+  return (
+    <div style={{ fontFamily: 'LXGWBright, sans-serif' }}>
+      你好，这是霞鹜晰黑字体！
+    </div>
+  );
+}
+```
+
+#### 方法2: 使用提供的常量
+
+```javascript
+import { LXGWBright } from 'webfont-lxgw-bright';
+import 'webfont-lxgw-bright';
+
+function App() {
+  return (
+    <div style={{ fontFamily: LXGWBright }}>
+      你好，这是霞鹜晰黑字体！
+    </div>
+  );
+}
+```
+
+#### 方法3: 使用配置函数
+
+```javascript
+import { configureLXGWBright } from 'webfont-lxgw-bright';
+import 'webfont-lxgw-bright';
+
+function App() {
+  // 获取Medium斜体配置
+  const fontConfig = configureLXGWBright({
+    weight: 500,
+    style: 'italic'
+  });
+
+  return (
+    <div style={{
+      fontFamily: fontConfig.fontFamily,
+      fontWeight: fontConfig.fontWeight,
+      fontStyle: fontConfig.fontStyle
+    }}>
+      你好，这是霞鹜晰黑字体的Medium斜体！
+    </div>
+  );
+}
+```
+
+#### 方法4: 全局样式
+
+如果你使用Styled Components:
+
+```javascript
+import { createGlobalStyle } from 'styled-components';
+import { LXGWBright } from 'webfont-lxgw-bright';
+import 'webfont-lxgw-bright';
+
+const GlobalStyle = createGlobalStyle`
+  body {
+    font-family: ${LXGWBright}, sans-serif;
+  }
+`;
+
+function App() {
+  return (
+    <>
+      <GlobalStyle />
+      <div>你好，这是霞鹜晰黑字体！</div>
+    </>
+  );
+}
+```
+
+如果使用CSS/SCSS模块:
+
+```css
+/* styles.css */
+@import '~webfont-lxgw-bright';
+
+body {
+  font-family: 'LXGWBright', sans-serif;
+}
+```
+
 ## 高级配置
 
 可以使用配置函数来自定义字体设置：
