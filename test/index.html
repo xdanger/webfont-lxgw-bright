@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LXGW Bright 字体测试</title>
+    <link rel="stylesheet" href="../index.css">
+    <style>
+        body {
+            font-family: 'LXGWBright', sans-serif;
+            line-height: 1.8;
+            margin: 0 auto;
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        h1 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .font-section {
+            margin: 30px 0;
+        }
+
+        .font-demo {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .weight-300 {
+            font-weight: 300;
+        }
+
+        .weight-400 {
+            font-weight: 400;
+        }
+
+        .weight-500 {
+            font-weight: 500;
+        }
+
+        .italic {
+            font-style: italic;
+        }
+
+        .info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+
+        #fontSizeControl {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .network-info {
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>LXGW Bright 字体子集化测试</h1>
+
+    <div class="controls">
+        <h3>测试控件</h3>
+        <div>
+            <label for="fontSizeControl">字体大小: <span id="fontSizeValue">18</span>px</label>
+            <input type="range" id="fontSizeControl" min="12" max="36" value="18">
+        </div>
+        <div class="network-info">
+            <p>已加载的字体文件: <span id="loadedFonts">0</span> 个</p>
+            <p>总下载大小: <span id="totalSize">0</span> KB</p>
+        </div>
+    </div>
+
+    <div class="font-section">
+        <h2>拉丁字符集 (Basic Latin)</h2>
+        <p class="info">Unicode 范围: U+0000-007F</p>
+        <div class="font-demo">
+            <p class="weight-400">Regular: The quick brown fox jumps over the lazy dog.</p>
+            <p class="weight-400 italic">Italic: The quick brown fox jumps over the lazy dog.</p>
+            <p class="weight-300">Light: The quick brown fox jumps over the lazy dog.</p>
+            <p class="weight-300 italic">Light Italic: The quick brown fox jumps over the lazy dog.</p>
+            <p class="weight-500">Medium: The quick brown fox jumps over the lazy dog.</p>
+            <p class="weight-500 italic">Medium Italic: The quick brown fox jumps over the lazy dog.</p>
+        </div>
+    </div>
+
+    <div class="font-section">
+        <h2>简体中文常用字 (CJK Unified Ideographs)</h2>
+        <p class="info">多个Unicode 范围</p>
+        <div class="font-demo">
+            <p class="weight-400">Regular: 我能吞下玻璃而不伤身体。中华人民共和国万岁！</p>
+            <p class="weight-400 italic">Italic: 我能吞下玻璃而不伤身体。中华人民共和国万岁！</p>
+            <p class="weight-300">Light: 我能吞下玻璃而不伤身体。中华人民共和国万岁！</p>
+            <p class="weight-300 italic">Light Italic: 我能吞下玻璃而不伤身体。中华人民共和国万岁！</p>
+            <p class="weight-500">Medium: 我能吞下玻璃而不伤身体。中华人民共和国万岁！</p>
+            <p class="weight-500 italic">Medium Italic: 我能吞下玻璃而不伤身体。中华人民共和国万岁！</p>
+        </div>
+    </div>
+
+    <div class="font-section">
+        <h2>日文假名 (Hiragana & Katakana)</h2>
+        <p class="info">Unicode 范围: U+3040-30FF</p>
+        <div class="font-demo">
+            <p class="weight-400">Regular: わたしはガラスを食べられます。それは私を傷つけません。</p>
+            <p class="weight-400 italic">Italic: わたしはガラスを食べられます。それは私を傷つけません。</p>
+            <p class="weight-300">Light: わたしはガラスを食べられます。それは私を傷つけません。</p>
+            <p class="weight-300 italic">Light Italic: わたしはガラスを食べられます。それは私を傷つけません。</p>
+            <p class="weight-500">Medium: わたしはガラスを食べられます。それは私を傷つけません。</p>
+            <p class="weight-500 italic">Medium Italic: わたしはガラスを食べられます。それは私を傷つけません。</p>
+        </div>
+    </div>
+
+    <div class="font-section">
+        <h2>特殊符号和标点 (Symbols & Punctuation)</h2>
+        <p class="info">Unicode 范围: U+2000-206F, U+3000-303F</p>
+        <div class="font-demo">
+            <p class="weight-400">Regular: ™©®¶§…""''‹›«»—–・●○■□▲▼★☆♠♣♥♦</p>
+            <p class="weight-400 italic">Italic: ™©®¶§…""''‹›«»—–・●○■□▲▼★☆♠♣♥♦</p>
+            <p class="weight-300">Light: ™©®¶§…""''‹›«»—–・●○■□▲▼★☆♠♣♥♦</p>
+            <p class="weight-300 italic">Light Italic: ™©®¶§…""''‹›«»—–・●○■□▲▼★☆♠♣♥♦</p>
+            <p class="weight-500">Medium: ™©®¶§…""''‹›«»—–・●○■□▲▼★☆♠♣♥♦</p>
+            <p class="weight-500 italic">Medium Italic: ™©®¶§…""''‹›«»—–・●○■□▲▼★☆♠♣♥♦</p>
+        </div>
+    </div>
+
+    <div class="font-section">
+        <h2>混合字符测试 (Mixed Characters)</h2>
+        <div class="font-demo">
+            <p class="weight-400">Regular: Hello 你好 こんにちは ™©®</p>
+            <p class="weight-400 italic">Italic: Hello 你好 こんにちは ™©®</p>
+            <p class="weight-300">Light: Hello 你好 こんにちは ™©®</p>
+            <p class="weight-300 italic">Light Italic: Hello 你好 こんにちは ™©®</p>
+            <p class="weight-500">Medium: Hello 你好 こんにちは ™©®</p>
+            <p class="weight-500 italic">Medium Italic: Hello 你好 こんにちは ™©®</p>
+        </div>
+    </div>
+
+    <div class="font-section">
+        <h2>自定义输入测试</h2>
+        <div class="font-demo">
+            <textarea id="customInput" rows="6" style="width: 100%; margin-bottom: 10px;"
+                placeholder="在这里输入任何文本来测试字体..."></textarea>
+            <div>
+                <label>
+                    <input type="radio" name="fontWeight" value="300" onchange="updateCustomText()"> Light (300)
+                </label>
+                <label>
+                    <input type="radio" name="fontWeight" value="400" checked onchange="updateCustomText()"> Regular
+                    (400)
+                </label>
+                <label>
+                    <input type="radio" name="fontWeight" value="500" onchange="updateCustomText()"> Medium (500)
+                </label>
+                <label>
+                    <input type="checkbox" id="italicToggle" onchange="updateCustomText()"> Italic
+                </label>
+            </div>
+            <div id="customOutput" style="margin-top: 15px; padding: 10px; border: 1px dashed #ccc;">
+                输入文本后将在这里显示
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p class="info">注：此页面使用子集化的LXGW Bright网页字体，按需加载不同的Unicode范围。</p>
+    </footer>
+
+    <script>
+        // 字体大小控制
+        const fontSizeControl = document.getElementById('fontSizeControl');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const fontDemos = document.querySelectorAll('.font-demo');
+
+        fontSizeControl.addEventListener('input', function () {
+            const size = this.value;
+            fontSizeValue.textContent = size;
+            fontDemos.forEach(demo => {
+                demo.style.fontSize = size + 'px';
+            });
+        });
+
+        // 自定义文本处理
+        const customInput = document.getElementById('customInput');
+        const customOutput = document.getElementById('customOutput');
+        const italicToggle = document.getElementById('italicToggle');
+
+        function updateCustomText() {
+            const text = customInput.value || '输入文本后将在这里显示';
+            const weight = document.querySelector('input[name="fontWeight"]:checked').value;
+            const isItalic = italicToggle.checked;
+
+            customOutput.textContent = text;
+            customOutput.style.fontWeight = weight;
+            customOutput.style.fontStyle = isItalic ? 'italic' : 'normal';
+        }
+
+        customInput.addEventListener('input', updateCustomText);
+
+        // 监控字体加载
+        const loadedFonts = document.getElementById('loadedFonts');
+        const totalSize = document.getElementById('totalSize');
+
+        function trackFontLoading() {
+            if (performance && performance.getEntriesByType) {
+                const resources = performance.getEntriesByType('resource');
+                const fontResources = resources.filter(r =>
+                    r.name.includes('/fonts/') && r.name.endsWith('.woff2')
+                );
+
+                loadedFonts.textContent = fontResources.length;
+
+                const totalBytes = fontResources.reduce((sum, r) => sum + r.transferSize, 0);
+                totalSize.textContent = (totalBytes / 1024).toFixed(1);
+            } else {
+                loadedFonts.parentElement.textContent = '此浏览器不支持资源加载跟踪';
+            }
+        }
+
+        // 初始加载后跟踪字体加载情况
+        window.addEventListener('load', () => {
+            setTimeout(trackFontLoading, 1000);
+        });
+
+        // 定期更新加载状态
+        setInterval(trackFontLoading, 2000);
+    </script>
+</body>
+
+</html>

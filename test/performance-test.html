@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LXGW Bright 字体性能测试</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            line-height: 1.6;
+            margin: 0 auto;
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        h1,
+        h2 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .test-result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .button-container {
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin-right: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .metrics {
+            margin-top: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #ddd;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .test-content {
+            display: none;
+        }
+
+        .info-box {
+            background-color: #e8f4fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning {
+            background-color: #fff8e6;
+            border-left: 4px solid #FFC107;
+        }
+
+        .steps {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .steps li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background-color: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>LXGW Bright 字体性能测试</h1>
+    <p>此页面测试不同字体加载方式的性能差异，包括：子集化和完整字体文件加载。</p>
+
+    <div class="info-box">
+        <h3>完整字体文件设置说明</h3>
+        <p>要测试完整字体，您需要从 LXGW Bright 的官方 GitHub 仓库获取完整字体文件：</p>
+        <ol class="steps">
+            <li>访问 <a href="https://github.com/lxgw/LxgwBright/releases" target="_blank">LXGW Bright 发布页面</a></li>
+            <li>下载最新版本的字体文件：
+                <ul>
+                    <li>如果有提供 <code>.woff2</code> 格式，直接下载 <code>LXGWBright.woff2</code> 和
+                        <code>LXGWBright-Italic.woff2</code>
+                    </li>
+                    <li>如果只有 <code>.ttf</code> 格式，下载 <code>LXGWBright.ttf</code> 和
+                        <code>LXGWBright-Italic.ttf</code>，然后使用在线工具（如 <a href="https://cloudconvert.com/ttf-to-woff2"
+                            target="_blank">CloudConvert</a>）将其转换为 <code>.woff2</code> 格式
+                    </li>
+                </ul>
+            </li>
+            <li>将 <code>.woff2</code> 文件保存到本项目的 <code>src-fonts</code> 目录</li>
+            <li>创建 <code>test/full-font.css</code> 文件（与本测试页在同一目录），内容如下：</li>
+        </ol>
+        <pre>@font-face {
+  font-family: 'LXGWBrightFull';
+  src: url('../src-fonts/LXGWBright.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'LXGWBrightFull';
+  src: url('../src-fonts/LXGWBright-Italic.woff2') format('woff2');
+  font-weight: normal;
+  font-style: italic;
+}</pre>
+    </div>
+
+    <div class="button-container">
+        <button id="testSubsetBtn">测试子集化字体</button>
+        <button id="testFullBtn">测试完整字体</button>
+        <button id="compareBtn">对比结果</button>
+    </div>
+
+    <div id="resultsPanel" class="test-result" style="display: none;">
+        <h3>测试结果</h3>
+        <div id="resultContent"></div>
+    </div>
+
+    <!-- 测试区域 - 子集化字体 -->
+    <div id="subsetTest" class="test-section">
+        <h2>子集化字体测试</h2>
+        <p>使用LXGW Bright子集化字体显示以下内容</p>
+        <div id="subsetContent" class="test-content"></div>
+    </div>
+
+    <!-- 测试区域 - 完整字体 -->
+    <div id="fullTest" class="test-section">
+        <h2>完整字体测试</h2>
+        <p>使用LXGW Bright完整字体显示以下内容</p>
+        <div id="fullContent" class="test-content"></div>
+    </div>
+
+    <div class="metrics">
+        <h2>性能指标</h2>
+        <table id="metricsTable">
+            <thead>
+                <tr>
+                    <th>指标</th>
+                    <th>子集化字体</th>
+                    <th>完整字体</th>
+                    <th>差异</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>总加载时间 (ms)</td>
+                    <td id="subsetLoadTime">-</td>
+                    <td id="fullLoadTime">-</td>
+                    <td id="loadTimeDiff">-</td>
+                </tr>
+                <tr>
+                    <td>字体文件大小 (KB)</td>
+                    <td id="subsetFileSize">-</td>
+                    <td id="fullFileSize">-</td>
+                    <td id="fileSizeDiff">-</td>
+                </tr>
+                <tr>
+                    <td>首次渲染时间 (ms)</td>
+                    <td id="subsetRenderTime">-</td>
+                    <td id="fullRenderTime">-</td>
+                    <td id="renderTimeDiff">-</td>
+                </tr>
+                <tr>
+                    <td>加载的文件数</td>
+                    <td id="subsetFileCount">-</td>
+                    <td id="fullFileCount">-</td>
+                    <td id="fileCountDiff">-</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 测试内容 - 包含各种字符集
+        const testContent = `
+<h3>中文文本示例</h3>
+<p style="font-size: 18px;">北冥有鱼，其名为鲲。鲲之大，不知其几千里也。化而为鸟，其名为鹏。鹏之背，不知其几千里也。怒而飞，其翼若垂天之云。是鸟也，海运则将徙于南冥。南冥者，天池也。</p>
+<p style="font-size: 18px;">天地有大美而不言，四时有明法而不议，万物有成理而不说。圣人者，原天地之美而达万物之理。是故至人无为，大圣不作，观于天地之谓也。</p>
+
+<h3>英文文本示例</h3>
+<p style="font-size: 18px;">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump!</p>
+<p style="font-size: 18px;">We promptly judged antique ivory buckles for the next prize. A mad boxer shot a quick, gloved jab to the jaw of his dizzy opponent.</p>
+
+<h3>日文文本示例</h3>
+<p style="font-size: 18px;">いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす</p>
+<p style="font-size: 18px;">私はガラスを食べられます。それは私を傷つけません。</p>
+
+<h3>混合文本示例</h3>
+<p style="font-size: 18px;">Web 字体 (Webフォント) 技术使得网页设计师能够使用他们选择的任何字体，而不仅仅是"网络安全"字体的有限子集。</p>
+<p style="font-size: 18px;">这是一个关于 LXGW Bright 字体子集化 (サブセット化) 的性能测试，我们将比较完整字体文件和子集化字体文件的加载性能。</p>
+
+<h3>特殊符号和数字</h3>
+<p style="font-size: 18px;">①②③④⑤⑥⑦⑧⑨⑩ ㊀㊁㊂㊃㊄㊅㊆㊇㊈㊉ ★☆○●◎◇◆□■△▲▽▼→←↑↓↔〓</p>
+<p style="font-size: 18px;">§¶†‡©®™ €£¥¢฿ ±×÷√∞≠≈∫∑∏∅∈∉∩∪⊆⊇⊂⊃</p>
+`;
+
+        // 辅助函数
+        function formatNumber(num) {
+            return num.toLocaleString();
+        }
+
+        function calculateDifference(a, b) {
+            if (a === '-' || b === '-') return '-';
+            const diff = a - b;
+            const percentage = ((diff / b) * 100).toFixed(2);
+            return `${formatNumber(diff)} (${percentage}%)`;
+        }
+
+        // 检查完整字体文件是否存在
+        async function checkFullFontAvailability() {
+            try {
+                // 尝试加载full-font.css文件
+                const response = await fetch('./full-font.css');
+                return response.status === 200;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // 测试子集化字体
+        async function testSubsetFont() {
+            const startTime = performance.now();
+
+            // 加载子集化字体的CSS
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = '../index.css';
+            document.head.appendChild(link);
+
+            // 显示测试内容
+            document.getElementById('subsetContent').style.display = 'block';
+            document.getElementById('subsetContent').style.fontFamily = 'LXGWBright, sans-serif';
+            document.getElementById('subsetContent').innerHTML = testContent;
+
+            // 等待字体加载完成
+            await document.fonts.ready;
+
+            const endTime = performance.now();
+            const loadTime = endTime - startTime;
+
+            // 记录结果
+            document.getElementById('subsetLoadTime').textContent = formatNumber(Math.round(loadTime));
+
+            // 计算加载的字体文件总大小和数量
+            setTimeout(() => {
+                const resources = performance.getEntriesByType('resource');
+                const fontResources = resources.filter(r =>
+                    r.name.includes('/fonts/') && r.name.endsWith('.woff2')
+                );
+
+                const totalBytes = fontResources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
+                const totalKB = (totalBytes / 1024).toFixed(2);
+
+                document.getElementById('subsetFileSize').textContent = formatNumber(totalKB);
+                document.getElementById('subsetFileCount').textContent = fontResources.length;
+
+                // 计算首次渲染时间
+                const perfEntries = performance.getEntriesByType('paint');
+                const firstPaint = perfEntries.find(e => e.name === 'first-paint');
+                if (firstPaint) {
+                    document.getElementById('subsetRenderTime').textContent = formatNumber(Math.round(firstPaint.startTime));
+                }
+
+                document.getElementById('resultsPanel').style.display = 'block';
+                document.getElementById('resultContent').innerHTML += '<p>子集化字体测试完成！</p>';
+
+                // 更新差异
+                updateDifferences();
+            }, 1000);
+        }
+
+        // 测试完整字体
+        async function testFullFont() {
+            document.getElementById('resultsPanel').style.display = 'block';
+
+            // 检查完整字体文件是否可用
+            const isFullFontAvailable = await checkFullFontAvailability();
+
+            if (!isFullFontAvailable) {
+                document.getElementById('resultContent').innerHTML = `
+                <div class="info-box warning">
+                    <p><strong>完整字体文件不可用</strong></p>
+                    <p>未找到完整字体文件。请按照上方的说明下载和设置完整字体文件后再尝试测试。</p>
+                </div>`;
+
+                // 使用模拟数据用于演示
+                document.getElementById('fullLoadTime').textContent = '(未测试)';
+                document.getElementById('fullFileSize').textContent = '(未测试)';
+                document.getElementById('fullRenderTime').textContent = '(未测试)';
+                document.getElementById('fullFileCount').textContent = '(未测试)';
+
+                return;
+            }
+
+            const startTime = performance.now();
+
+            // 加载完整字体的CSS
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = './full-font.css';
+            document.head.appendChild(link);
+
+            // 显示测试内容
+            document.getElementById('fullContent').style.display = 'block';
+            document.getElementById('fullContent').style.fontFamily = 'LXGWBrightFull, sans-serif';
+            document.getElementById('fullContent').innerHTML = testContent;
+
+            // 等待字体加载完成
+            await document.fonts.ready;
+
+            const endTime = performance.now();
+            const loadTime = endTime - startTime;
+
+            // 记录结果
+            document.getElementById('fullLoadTime').textContent = formatNumber(Math.round(loadTime));
+
+            // 计算加载的字体文件总大小和数量
+            setTimeout(() => {
+                const resources = performance.getEntriesByType('resource');
+                const fontResources = resources.filter(r =>
+                    r.name.includes('/src-fonts/') && r.name.endsWith('.woff2')
+                );
+
+                const totalBytes = fontResources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
+                const totalKB = (totalBytes / 1024).toFixed(2);
+
+                document.getElementById('fullFileSize').textContent = formatNumber(totalKB);
+                document.getElementById('fullFileCount').textContent = fontResources.length;
+
+                // 更新差异
+                updateDifferences();
+
+                document.getElementById('resultContent').innerHTML += '<p>完整字体测试完成！</p>';
+            }, 1000);
+        }
+
+        // 更新差异计算
+        function updateDifferences() {
+            const subsetLoadTime = document.getElementById('subsetLoadTime').textContent;
+            const fullLoadTime = document.getElementById('fullLoadTime').textContent;
+
+            const subsetFileSize = document.getElementById('subsetFileSize').textContent;
+            const fullFileSize = document.getElementById('fullFileSize').textContent;
+
+            const subsetRenderTime = document.getElementById('subsetRenderTime').textContent;
+            const fullRenderTime = document.getElementById('fullRenderTime').textContent;
+
+            const subsetFileCount = document.getElementById('subsetFileCount').textContent;
+            const fullFileCount = document.getElementById('fullFileCount').textContent;
+
+            // 只有当两边都有数据时才计算差异
+            if (subsetLoadTime !== '-' && fullLoadTime !== '-' &&
+                !fullLoadTime.includes('未测试')) {
+                document.getElementById('loadTimeDiff').textContent = calculateDifference(
+                    parseFloat(subsetLoadTime.replace(/,/g, '')),
+                    parseFloat(fullLoadTime.replace(/,/g, ''))
+                );
+            } else {
+                document.getElementById('loadTimeDiff').textContent = '-';
+            }
+
+            if (subsetFileSize !== '-' && fullFileSize !== '-' &&
+                !fullFileSize.includes('未测试')) {
+                document.getElementById('fileSizeDiff').textContent = calculateDifference(
+                    parseFloat(subsetFileSize.replace(/,/g, '')),
+                    parseFloat(fullFileSize.replace(/,/g, ''))
+                );
+            } else {
+                document.getElementById('fileSizeDiff').textContent = '-';
+            }
+
+            if (subsetRenderTime !== '-' && fullRenderTime !== '-' &&
+                !fullRenderTime.includes('未测试')) {
+                document.getElementById('renderTimeDiff').textContent = calculateDifference(
+                    parseFloat(subsetRenderTime.replace(/,/g, '')),
+                    parseFloat(fullRenderTime.replace(/,/g, ''))
+                );
+            } else {
+                document.getElementById('renderTimeDiff').textContent = '-';
+            }
+
+            if (subsetFileCount !== '-' && fullFileCount !== '-' &&
+                !fullFileCount.includes('未测试')) {
+                document.getElementById('fileCountDiff').textContent = calculateDifference(
+                    parseFloat(subsetFileCount.replace(/,/g, '')),
+                    parseFloat(fullFileCount.replace(/,/g, ''))
+                );
+            } else {
+                document.getElementById('fileCountDiff').textContent = '-';
+            }
+        }
+
+        // 比较结果
+        async function compareResults() {
+            document.getElementById('resultsPanel').style.display = 'block';
+
+            const subsetLoadTime = document.getElementById('subsetLoadTime').textContent;
+            const fullLoadTime = document.getElementById('fullLoadTime').textContent;
+
+            if (subsetLoadTime === '-' || fullLoadTime === '-' ||
+                fullLoadTime.includes('未测试')) {
+                document.getElementById('resultContent').innerHTML = `
+                <div class="info-box warning">
+                    <p>请先运行两个测试后再比较结果。</p>
+                    <p>注意：完整字体测试需要设置完整字体文件。</p>
+                </div>`;
+                return;
+            }
+
+            const loadTimeDiff = document.getElementById('loadTimeDiff').textContent;
+            const fileSizeDiff = document.getElementById('fileSizeDiff').textContent;
+
+            let summary = '<h4>性能比较结果</h4>';
+            summary += '<p>基于当前测试数据，我们得出以下结论：</p>';
+            summary += '<ul>';
+
+            // 分析加载时间
+            const loadTimePercentage = parseFloat(loadTimeDiff.match(/\(([-\d.]+)%\)/)[1]);
+            if (loadTimePercentage < 0) {
+                summary += `<li>子集化字体的加载时间比完整字体快 ${Math.abs(loadTimePercentage).toFixed(2)}%</li>`;
+            } else {
+                summary += `<li>子集化字体的加载时间比完整字体慢 ${loadTimePercentage.toFixed(2)}%</li>`;
+            }
+
+            // 分析文件大小
+            const fileSizePercentage = parseFloat(fileSizeDiff.match(/\(([-\d.]+)%\)/)[1]);
+            if (fileSizePercentage < 0) {
+                summary += `<li>子集化字体的总下载大小比完整字体小 ${Math.abs(fileSizePercentage).toFixed(2)}%</li>`;
+            } else {
+                summary += `<li>子集化字体的总下载大小比完整字体大 ${fileSizePercentage.toFixed(2)}%</li>`;
+            }
+
+            // 总体结论
+            if (loadTimePercentage < 0 && fileSizePercentage < 0) {
+                summary += '<li><strong>结论：子集化字体在加载时间和文件大小方面都优于完整字体，是更优的选择。</strong></li>';
+            } else if (loadTimePercentage < 0) {
+                summary += '<li><strong>结论：子集化字体在加载时间方面优于完整字体，但在文件大小方面可能需要优化。</strong></li>';
+            } else if (fileSizePercentage < 0) {
+                summary += '<li><strong>结论：子集化字体在文件大小方面优于完整字体，但在加载时间方面可能需要优化。</strong></li>';
+            } else {
+                summary += '<li><strong>结论：完整字体在此测试中表现更好，可能需要检查子集化策略。</strong></li>';
+            }
+
+            summary += '</ul>';
+            summary += '<p>注：这只是基于当前页面的有限测试，实际使用场景可能有所不同。</p>';
+
+            document.getElementById('resultContent').innerHTML = summary;
+        }
+
+        // 事件监听
+        document.getElementById('testSubsetBtn').addEventListener('click', testSubsetFont);
+        document.getElementById('testFullBtn').addEventListener('click', testFullFont);
+        document.getElementById('compareBtn').addEventListener('click', compareResults);
+    </script>
+</body>
+
+</html>
