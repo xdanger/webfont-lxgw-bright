@@ -66,6 +66,15 @@ function extractNumberFromPath(filePath) {
 }
 
 /**
+ * 将驼峰命名转换为连字符分隔的小写形式
+ * @param {string} str 驼峰命名的字符串
+ * @returns {string} 转换后的字符串
+ */
+function camelToKebabCase(str) {
+  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+/**
  * 生成单个字体的配置代码
  * @param {string} weight 字重名称
  * @param {string[]} files 字体文件列表
@@ -74,6 +83,9 @@ function extractNumberFromPath(filePath) {
 function generateFontConfig(weight, files) {
   const exportName = config.fontExportNames[weight];
   const fontWeight = config.fontWeightValues[weight];
+
+  // 正确格式化CSS变量名: 变成 --font-lxgw-bright-light 这种格式
+  const cssVarName = `--font-${camelToKebabCase(exportName)}`;
 
   let lastGroupComment = '';
   let srcItems = files.map(file => {
@@ -109,7 +121,7 @@ function generateFontConfig(weight, files) {
   src: [
 ${srcItems.join(',\n')}
   ],
-  variable: '--font-${exportName.replace('lxgw', 'lxgw-')}',
+  variable: '${cssVarName}',
   preload: false,
   display: 'swap',
   fallback: ['system-ui', 'sans-serif'],

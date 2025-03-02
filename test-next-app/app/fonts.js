@@ -1,7 +1,7 @@
 /**
  * 自动生成的 Next.js 字体配置文件
  * 由 scripts/generate-fonts.js 脚本生成
- * 生成时间: 2025-03-02T11:33:21.510Z
+ * 生成时间: 2025-03-02T11:58:46.781Z
  *
  * 包含以下字重:
  * - Regular (400)
@@ -309,7 +309,7 @@ export const lxgwBright = localFont({
       style: 'normal',
     }
   ],
-  variable: '--font-lxgw-Bright',
+  variable: '--font-lxgw-bright',
   preload: false,
   display: 'swap',
   fallback: ['system-ui', 'sans-serif'],
@@ -614,7 +614,7 @@ export const lxgwBrightLight = localFont({
       style: 'normal',
     }
   ],
-  variable: '--font-lxgw-BrightLight',
+  variable: '--font-lxgw-bright-light',
   preload: false,
   display: 'swap',
   fallback: ['system-ui', 'sans-serif'],
@@ -919,8 +919,9 @@ export const lxgwBrightMedium = localFont({
       style: 'normal',
     }
   ],
-  variable: '--font-lxgw-BrightMedium',
+  variable: '--font-lxgw-bright-medium',
   preload: false,
   display: 'swap',
   fallback: ['system-ui', 'sans-serif'],
 });
+
