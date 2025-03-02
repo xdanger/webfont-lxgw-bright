@@ -12,11 +12,11 @@
  * 第1步: 创建字体配置文件
  * @filename: app/fonts.js
  */
-import { createLXGWBrightFont } from 'webfont-lxgw-bright/next';
+import { getLXGWBrightConfig } from 'webfont-lxgw-bright/next';
 import localFont from 'next/font/local';
 
-// 创建字体加载器
-export const lxgwBright = createLXGWBrightFont(localFont);
+// 创建字体加载器 - 注意：直接调用 localFont
+export const lxgwBright = localFont(getLXGWBrightConfig());
 
 /**
  * 第2步: 在根布局文件中使用
@@ -51,12 +51,12 @@ body {
  * @filename: pages/_app.js
  */
 /*
-import { createLXGWBrightFont } from 'webfont-lxgw-bright/next';
+import { getLXGWBrightConfig } from 'webfont-lxgw-bright/next';
 import localFont from 'next/font/local';
 import 'webfont-lxgw-bright/next/styles.css';
 
-// 创建字体加载器
-const lxgwBright = createLXGWBrightFont(localFont);
+// 创建字体加载器 - 必须在模块顶层直接调用 localFont
+const lxgwBright = localFont(getLXGWBrightConfig());
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -98,14 +98,14 @@ module.exports = {
  * @filename: lib/fonts.js
  */
 /*
-import { createLXGWBrightFont } from 'webfont-lxgw-bright/next';
+import { getLXGWBrightConfig } from 'webfont-lxgw-bright/next';
 import localFont from 'next/font/local';
 
-// 使用自定义配置
-export const lxgwBright = createLXGWBrightFont(localFont, {
+// 使用自定义配置 - 注意：配置是传给 localFont 的
+export const lxgwBright = localFont(getLXGWBrightConfig({
   variable: '--font-lxgw',     // 自定义CSS变量名
   preload: false,              // 禁用预加载（推荐用于CJK字体）
   display: 'optional',         // 使用可选字体显示策略
   fallback: true,              // 启用后备字体
-});
+}));
 */
