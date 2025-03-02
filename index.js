@@ -1,26 +1,19 @@
 /**
- * LXGW Bright Webfont
- *
- * 这个文件提供了便捷的字体常量和配置函数
+ * LXGW Bright Webfont - Public API
  */
 
-"use strict";
-
-// Import CSS for bundlers that support CSS imports
-require('./index.css');
-
-// 定义字体常量
+// Font family constants
 const LXGWBright = 'LXGWBright';
 
 /**
- * 配置LXGW Bright字体
- * @param {Object} options 配置选项
- * @param {string|number} [options.weight=400] 字体粗细 (300, 400, 500)
- * @param {string} [options.style='normal'] 字体样式 ('normal', 'italic')
- * @returns {Object} 字体配置对象
+ * Helper function to configure font
+ * @param {Object} options Font options
+ * @param {string} options.weight Font weight (default: '400')
+ * @param {string} options.style Font style (default: 'normal')
+ * @returns {Object} Font configuration
  */
 function configureLXGWBright(options = {}) {
-    const { weight = 400, style = 'normal' } = options;
+    const { weight = '400', style = 'normal' } = options;
 
     return {
         fontFamily: LXGWBright,
@@ -29,7 +22,7 @@ function configureLXGWBright(options = {}) {
     };
 }
 
-// Export public API
+// Export the public API
 module.exports = {
     LXGWBright,
     configureLXGWBright

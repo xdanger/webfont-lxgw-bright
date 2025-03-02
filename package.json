@@ -1,13 +1,12 @@
 {
     "name": "webfont-lxgw-bright",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Webfont provider for LXGW-Bright with split font files",
-    "main": "scripts/build-fonts.js",
+    "main": "index.js",
     "files": [
         "index.css",
         "index.js",
         "fonts",
-        "scripts/build-fonts.js",
         "src/cli.js"
     ],
     "bin": {
