@@ -1,17 +1,16 @@
 /**
- * LXGW Bright Webfont Builder and CLI
+ * LXGW Bright Webfont Builder using fonttools
  *
- * This script has two functions:
- * 1. When run as a build script (node scripts/build-fonts.js), it processes font files and creates subsets
- * 2. When run as CLI (npx webfont-lxgw-bright), it copies processed fonts to user's project
+ * This script uses fonttools (pyftsubset) to efficiently create font subsets
+ * It should produce much smaller files than the Fontmin approach
  */
 
 const fs = require('fs');
 const path = require('path');
-const fontkit = require('fontkit');
-const { execSync } = require('child_process');
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+const { promisify } = require('util');
+const { exec } = require('child_process');
+
+const execPromise = promisify(exec);
 
 // =======================================================
 // Public API & Constants
@@ -48,59 +47,6 @@ const CSS_FILE = path.join(PACKAGE_ROOT, 'index.css');
 // Font processing configuration
 const SRC_FONTS_DIR = path.join(PACKAGE_ROOT, 'src-fonts');
 const TEMP_DIR = path.join(PACKAGE_ROOT, 'temp');
-const MAX_CHUNK_SIZE = 350 * 1024; // 350KB in bytes
-
-// =======================================================
-// Helper Functions
-// =======================================================
-
-/**
- * Ensure directories exist
- */
-function ensureDirectories() {
-  if (!fs.existsSync(FONTS_DIR)) {
-    fs.mkdirSync(FONTS_DIR, { recursive: true });
-    console.log(`📁 Created directory: ${FONTS_DIR}`);
-  }
-
-  if (!fs.existsSync(TEMP_DIR)) {
-    fs.mkdirSync(TEMP_DIR, { recursive: true });
-    console.log(`📁 Created temp directory: ${TEMP_DIR}`);
-  }
-}
-
-/**
- * Check if pyftsubset is installed
- */
-async function checkPyftsubset() {
-  try {
-    await exec('pyftsubset --help');
-    console.log('✓ pyftsubset is available');
-    return true;
-  } catch (error) {
-    console.error('❌ pyftsubset not found. Installing fonttools...');
-    try {
-      await exec('pip install fonttools');
-      console.log('✓ fonttools installed successfully');
-      return true;
-    } catch (pipError) {
-      console.error('❌ Failed to install fonttools:', pipError.message);
-      console.log('\nThis script requires fonttools to be installed. Please install it manually:');
-      console.log('  pip install fonttools');
-      console.log('\nNote: This is only required for package maintainers, not for end users.');
-      return false;
-    }
-  }
-}
-
-/**
- * Determine font weight from font name
- */
-function getFontWeight(fontName) {
-  if (fontName.includes('Light')) return 300;
-  if (fontName.includes('Medium')) return 500;
-  return 400; // Regular
-}
 
 // =======================================================
 // Unicode Ranges
@@ -182,74 +128,146 @@ const unicodeRanges = [
 ];
 
 // =======================================================
-// Font Subsetting Functions
+// Helper Functions
 // =======================================================
 
 /**
- * Create a font subset using pyftsubset
- * @param {string} fontPath Path to the font file
- * @param {string} unicodeRange Unicode range to include
- * @param {string} outputPath Path to save the subset font
- * @returns {boolean} Whether the subset was created successfully
+ * Ensure directories exist
  */
-async function createFontSubset(fontPath, unicodeRange, outputPath) {
-  try {
-    // Extract format from file extension
-    const format = path.extname(fontPath).substring(1).toLowerCase();
+function ensureDirectories() {
+  if (!fs.existsSync(FONTS_DIR)) {
+    fs.mkdirSync(FONTS_DIR, { recursive: true });
+    console.log(`📁 Created directory: ${FONTS_DIR}`);
+  }
 
-    // Check if format is supported
-    if (!['woff', 'woff2'].includes(format)) {
-      console.error(`❌ Unsupported font format: ${format}`);
-      return false;
-    }
-
-    console.log(`📋 Creating subset with format: ${format.toUpperCase()} → ${format.toUpperCase()} (source → target)`);
-
-    // Create the subset command
-    const command = `pyftsubset "${fontPath}" --unicodes="${unicodeRange}" --output-file="${outputPath}" --flavor=${format} --layout-features='*'`;
-
-    // For debugging
-    console.log(`🔧 Command: ${command}`);
-
-    // Execute the command
-    const { stdout, stderr } = await exec(command);
-
-    if (stderr && stderr.includes('error')) {
-      console.error(`⚠️ Warning during subsetting: ${stderr}`);
-    }
-
-    if (stdout && stdout.trim()) {
-      console.log(`ℹ️ Subsetting output: ${stdout.trim()}`);
-    }
-
-    // Verify file exists and check its format
-    if (fs.existsSync(outputPath)) {
-      const outputFormat = path.extname(outputPath).substring(1).toLowerCase();
-      console.log(`✓ Format preserved: ${format.toUpperCase()} → ${outputFormat.toUpperCase()}`);
-      return true;
-    } else {
-      console.error(`❌ Failed to create subset file: ${outputPath}`);
-      return false;
-    }
-  } catch (error) {
-    console.error(`❌ Error creating subset: ${error.message}`);
-    if (error.stderr) {
-      console.error(`📜 Command output: ${error.stderr}`);
-    }
-    return false;
+  if (!fs.existsSync(TEMP_DIR)) {
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
+    console.log(`📁 Created temp directory: ${TEMP_DIR}`);
   }
 }
 
 /**
- * Process a single font file
+ * Determine font weight from font name
+ */
+function getFontWeight(fontName) {
+  if (fontName.includes('Light')) return 300;
+  if (fontName.includes('Medium')) return 500;
+  return 400; // Regular
+}
+
+/**
+ * Check if pyftsubset is available
+ */
+async function checkPyftsubset() {
+  try {
+    await execPromise('pyftsubset --help');
+    return true;
+  } catch (error) {
+    console.error('❌ pyftsubset not found. Please install fonttools:');
+    console.error('   pip install fonttools brotli zopfli');
+    return false;
+  }
+}
+
+// =======================================================
+// Font Processing with fonttools
+// =======================================================
+
+/**
+ * Process a single font file with fonttools
  * @param {string} fontPath Path to the font file
- * @returns {Array} Font entries
+ * @param {number} rangeIndex Index of the Unicode range to process
+ * @returns {Promise<object>} Font entry information
+ */
+async function processFontSubset(fontPath, rangeIndex) {
+  const fontFileName = path.basename(fontPath);
+  const fontFileExtension = path.extname(fontPath).substring(1).toLowerCase();
+  const fontNameWithoutExtension = path.basename(fontPath, path.extname(fontPath));
+
+  const range = unicodeRanges[rangeIndex];
+  const outPath = path.join(
+    FONTS_DIR,
+    `${fontNameWithoutExtension}.${rangeIndex}.${fontFileExtension}`
+  );
+
+  // Skip processing if output file already exists and has reasonable size
+  if (fs.existsSync(outPath)) {
+    try {
+      const stats = fs.statSync(outPath);
+      if (stats.size > 0 && stats.size < 500 * 1024) { // 500KB is a reasonable threshold for subset
+        console.log(`⏩ Skipping already processed subset: ${path.basename(outPath)}`);
+        return {
+          subset: rangeIndex,
+          unicodeRange: range.range,
+          path: path.basename(outPath),
+          name: fontNameWithoutExtension,
+          format: fontFileExtension
+        };
+      } else {
+        console.log(`🔄 Reprocessing subset because file size (${Math.round(stats.size / 1024)}KB) suggests incorrect subsetting`);
+      }
+    } catch (err) {
+      console.log(`⚠️ Error checking existing file, will reprocess: ${err.message}`);
+    }
+  }
+
+  console.log(`\n⏳ Creating subset ${rangeIndex + 1}/${unicodeRanges.length}: ${range.name}`);
+  console.log(`👉 Unicode range: ${range.range}`);
+  console.log(`🔠 Output format: ${fontFileExtension.toUpperCase()}`);
+
+  const startTime = Date.now();
+
+  try {
+    // Build the pyftsubset command
+    const command = `pyftsubset "${fontPath}" --unicodes="${range.range}" --flavor=${fontFileExtension} --output-file="${outPath}" --layout-features='*' --glyph-names --symbol-cmap --legacy-cmap --notdef-glyph --notdef-outline --recommended-glyphs --name-legacy --name-IDs='*' --name-languages='*'`;
+
+    console.log(`🔄 Running fonttools subsetting command...`);
+
+    // Execute the command
+    const { stdout, stderr } = await execPromise(command);
+
+    if (stderr && !stderr.includes('INFO')) {
+      console.warn(`⚠️ Warning from pyftsubset: ${stderr}`);
+    }
+
+    // Check if the output file was created and has a reasonable size
+    if (fs.existsSync(outPath)) {
+      const stats = fs.statSync(outPath);
+      const outputKB = Math.round(stats.size / 1024);
+
+      // Validate that subsetting worked properly
+      if (stats.size === 0) {
+        throw new Error('Output file is empty');
+      }
+
+      const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
+      console.log(`✅ Created: ${path.basename(outPath)} (${outputKB}KB) in ${processingTime} seconds`);
+
+      return {
+        subset: rangeIndex,
+        unicodeRange: range.range,
+        path: path.basename(outPath),
+        name: fontNameWithoutExtension,
+        format: fontFileExtension
+      };
+    } else {
+      throw new Error('Output file was not created');
+    }
+  } catch (error) {
+    console.error(`❌ Error processing font subset: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Process a single font file for all unicode ranges
+ * @param {string} fontPath Path to the font file
+ * @returns {Promise<Array>} Array of font entries
  */
 async function processFont(fontPath) {
   try {
     const fontFileName = path.basename(fontPath);
     const fontFileExtension = path.extname(fontPath).substring(1).toLowerCase();
-    const fontNameWithoutExtension = path.basename(fontPath, path.extname(fontPath));
 
     console.log(`\n🔤 Processing font: ${fontFileName}`);
     console.log(`📝 Format: ${fontFileExtension.toUpperCase()}`);
@@ -260,31 +278,49 @@ async function processFont(fontPath) {
     // Each subset range will become a separate file
     let entries = [];
 
-    // Split font into chunks
-    for (let i = 0; i < unicodeRanges.length; i++) {
-      const range = unicodeRanges[i];
-      const outPath = path.join(
-        FONTS_DIR,
-        `${fontNameWithoutExtension}.${i}.${fontFileExtension}`
+    // Process ranges in smaller batches to avoid overwhelming the system
+    const batchSize = 4; // Process 4 ranges at a time
+    const ranges = [...Array(unicodeRanges.length).keys()]; // [0, 1, 2, ..., unicodeRanges.length-1]
+
+    // Setup progress tracking
+    let successCount = 0;
+    let failureCount = 0;
+    const totalRanges = ranges.length;
+
+    for (let i = 0; i < ranges.length; i += batchSize) {
+      const batch = ranges.slice(i, i + batchSize);
+      const batchNumber = Math.floor(i / batchSize) + 1;
+      const totalBatches = Math.ceil(ranges.length / batchSize);
+
+      console.log(`\n🔄 Processing batch ${batchNumber}/${totalBatches} (${batch.length} ranges)`);
+      console.log(`📊 Progress: ${Math.round((i / ranges.length) * 100)}% complete`);
+      console.log(`📈 Stats: ${successCount} successful, ${failureCount} failed, ${totalRanges - (successCount + failureCount)} remaining`);
+
+      // Process each range in the batch concurrently
+      const promises = batch.map(rangeIndex =>
+        processFontSubset(fontPath, rangeIndex)
+          .catch(err => {
+            console.error(`❌ Failed processing range ${rangeIndex} (${unicodeRanges[rangeIndex].name}): ${err.message}`);
+            failureCount++;
+            return null;
+          })
       );
 
-      console.log(`\n⏳ Creating subset ${i + 1}/${unicodeRanges.length}: ${range.name}`);
-      console.log(`👉 Unicode range: ${range.range}`);
-      console.log(`🔠 Output format: ${fontFileExtension.toUpperCase()}`);
+      // Wait for this batch to complete
+      const results = await Promise.all(promises);
 
-      const result = await createFontSubset(fontPath, range.range, outPath);
+      // Collect successful results
+      results.forEach(result => {
+        if (result) {
+          entries.push(result);
+          successCount++;
+        }
+      });
 
-      if (result) {
-        const fontSizeKb = (fs.statSync(outPath).size / 1024).toFixed(2);
-        console.log(`✅ Created: ${path.basename(outPath)} (${fontSizeKb}KB)`);
-
-        entries.push({
-          subset: i,
-          unicodeRange: range.range,
-          path: path.basename(outPath),
-          name: fontNameWithoutExtension,
-          format: fontFileExtension
-        });
+      // Add a small delay between batches
+      if (i + batchSize < ranges.length) {
+        console.log(`⏱️ Pausing for 500ms to allow system recovery...`);
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
@@ -292,11 +328,12 @@ async function processFont(fontPath) {
     const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`\n✨ Completed processing ${fontFileName} in ${processingTime} seconds`);
     console.log(`📦 Created ${entries.length} subset files`);
+    console.log(`📊 Final stats: ${successCount} successful, ${failureCount} failed out of ${totalRanges} ranges`);
 
     return entries;
   } catch (error) {
-    console.error(`❌ Error processing font ${fontPath}:`, error);
-    return null;
+    console.error(`❌ Error processing font ${path.basename(fontPath)}:`, error);
+    return [];
   }
 }
 
@@ -364,9 +401,7 @@ function generateCSS(fontEntries) {
     });
   });
 
-  fs.writeFileSync(CSS_FILE, css);
-  console.log(`✅ Generated CSS at ${CSS_FILE}`);
-  console.log(`   Created ${fontFaceCount} @font-face declarations`);
+  return css;
 }
 
 // =======================================================
@@ -374,111 +409,155 @@ function generateCSS(fontEntries) {
 // =======================================================
 
 /**
- * Build fonts - process all font files and generate CSS
+ * Build fonts process
  */
 async function buildFonts() {
-  console.log('🚀 LXGW Bright Webfont Builder');
-  console.log('===============================');
-  console.log('This script prepares font files for the webfont-lxgw-bright package.');
-  console.log('It is intended for package maintainers only.\n');
-
   try {
+    console.log('🚀 Starting LXGW Bright font processing with fonttools');
+    console.log('⚙️ Using optimized settings for better subsetting');
+
+    // Check if pyftsubset is available
+    const pyftsubsetAvailable = await checkPyftsubset();
+    if (!pyftsubsetAvailable) {
+      throw new Error('pyftsubset is required for this script to work');
+    }
+
     // Ensure directories exist
     ensureDirectories();
 
-    // Check if fonttools is installed
-    const hasPyftsubset = await checkPyftsubset();
-    if (!hasPyftsubset) {
-      console.error('❌ Cannot continue without fonttools. Please install it and try again.');
-      process.exit(1);
-    }
-
-    // Empty the fonts directory to remove old files
-    if (fs.existsSync(FONTS_DIR)) {
-      const existingFiles = fs.readdirSync(FONTS_DIR);
-      if (existingFiles.length > 0) {
-        console.log(`🧹 Cleaning output directory (${existingFiles.length} files)...`);
-        for (const file of existingFiles) {
-          if (file !== '.gitkeep') {
-            fs.unlinkSync(path.join(FONTS_DIR, file));
-          }
+    // Clean up any old files
+    try {
+      const files = fs.readdirSync(FONTS_DIR);
+      let deletedCount = 0;
+      for (const file of files) {
+        if (file !== '.gitkeep') {
+          fs.unlinkSync(path.join(FONTS_DIR, file));
+          deletedCount++;
         }
       }
+      console.log(`🧹 Cleaned up ${deletedCount} old font files`);
+    } catch (error) {
+      console.warn(`⚠️ Warning: Could not clean old files: ${error.message}`);
     }
 
-    // Check if source fonts exist
-    if (!fs.existsSync(SRC_FONTS_DIR)) {
-      console.error(`❌ Source fonts directory not found: ${SRC_FONTS_DIR}`);
-      console.log('Please create this directory and add your font files.');
-      process.exit(1);
-    }
-
-    // Get all font files
+    // Check for source fonts
     const fontFiles = fs.readdirSync(SRC_FONTS_DIR)
-      .filter(file => /\.(woff|woff2)$/i.test(file))
-      .map(file => path.join(SRC_FONTS_DIR, file));
+      .filter(file =>
+        (file.endsWith('.woff') || file.endsWith('.woff2')) &&
+        file.startsWith('LXGWBright')
+      );
 
     if (fontFiles.length === 0) {
-      console.error('❌ No .woff or .woff2 files found in source directory.');
-      process.exit(1);
+      throw new Error('No source font files found in ' + SRC_FONTS_DIR);
     }
 
-    // Count fonts by format
-    const woffFiles = fontFiles.filter(file => file.toLowerCase().endsWith('.woff'));
-    const woff2Files = fontFiles.filter(file => file.toLowerCase().endsWith('.woff2'));
+    console.log(`\n📚 Found ${fontFiles.length} source font files`);
 
-    console.log('\n📊 Font Format Statistics:');
-    console.log(`- WOFF  files: ${woffFiles.length}`);
-    console.log(`- WOFF2 files: ${woff2Files.length}`);
-    console.log(`- Total files: ${fontFiles.length}\n`);
+    // Log font formats found
+    const woffFiles = fontFiles.filter(file => file.endsWith('.woff')).length;
+    const woff2Files = fontFiles.filter(file => file.endsWith('.woff2')).length;
+    console.log(`📊 Font formats: ${woffFiles} WOFF files, ${woff2Files} WOFF2 files\n`);
 
-    console.log(`📦 Starting processing of ${fontFiles.length} font files...`);
-
-    // Process each font
-    const fontEntries = [];
-    const formatSummary = {
-      woff: { inputs: 0, outputs: 0 },
-      woff2: { inputs: 0, outputs: 0 }
+    // Process each font file, with error handling and recovery
+    const allEntries = [];
+    const fontResults = {
+      successful: 0,
+      failed: 0,
+      total: fontFiles.length
     };
 
-    for (const fontPath of fontFiles) {
-      const format = path.extname(fontPath).substring(1).toLowerCase();
-      formatSummary[format].inputs++;
+    // Process fonts in sequence to avoid memory issues
+    for (let i = 0; i < fontFiles.length; i++) {
+      const fontFile = fontFiles[i];
+      const fontPath = path.join(SRC_FONTS_DIR, fontFile);
 
-      const entries = await processFont(fontPath);
-      if (entries) {
-        if (Array.isArray(entries)) {
-          formatSummary[format].outputs += entries.length;
+      console.log(`\n📂 Processing font ${i + 1}/${fontFiles.length}: ${fontFile}`);
+
+      try {
+        const entries = await processFont(fontPath);
+        if (entries.length > 0) {
+          allEntries.push(...entries);
+          fontResults.successful++;
+          console.log(`✅ Successfully processed ${fontFile} with ${entries.length} subsets`);
         } else {
-          formatSummary[format].outputs++;
+          fontResults.failed++;
+          console.error(`❌ Failed to generate any subsets for ${fontFile}`);
         }
-        fontEntries.push(entries);
+      } catch (error) {
+        fontResults.failed++;
+        console.error(`❌ Error processing font ${fontFile}:`, error);
+      }
+
+      // Report progress after each font
+      console.log(`\n📈 Overall progress: ${i + 1}/${fontFiles.length} fonts processed`);
+      console.log(`📊 Font processing stats: ${fontResults.successful} successful, ${fontResults.failed} failed`);
+
+      // Add a small delay between fonts to let system resources settle
+      if (i < fontFiles.length - 1) {
+        console.log(`⏱️ Pausing for 1 second before next font...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
-    // Generate CSS
-    generateCSS(fontEntries.flat());
+    // Generate CSS with font-face rules
+    if (allEntries.length > 0) {
+      console.log('\n🎨 Generating CSS file with @font-face declarations...');
+      const cssContent = generateCSS(allEntries);
+      fs.writeFileSync(CSS_FILE, cssContent);
+      console.log(`✅ Generated CSS at ${CSS_FILE}`);
+      console.log(`   Created ${allEntries.length} @font-face declarations`);
+    } else {
+      console.error('❌ No font entries were generated, cannot create CSS file');
+    }
+
+    // Processing summary
+    const woffOutputs = allEntries.filter(entry => entry.format === 'woff').length;
+    const woff2Outputs = allEntries.filter(entry => entry.format === 'woff2').length;
 
     console.log('\n📊 Processing Summary:');
     console.log('---------------------');
     console.log('Input files:');
-    console.log(`- WOFF:  ${formatSummary.woff.inputs} files`);
-    console.log(`- WOFF2: ${formatSummary.woff2.inputs} files`);
+    console.log(`- WOFF:  ${woffFiles} files`);
+    console.log(`- WOFF2: ${woff2Files} files`);
     console.log('\nOutput files (after subsetting):');
-    console.log(`- WOFF:  ${formatSummary.woff.outputs} files`);
-    console.log(`- WOFF2: ${formatSummary.woff2.outputs} files`);
-    console.log(`- Total: ${formatSummary.woff.outputs + formatSummary.woff2.outputs} files`);
+    console.log(`- WOFF:  ${woffOutputs} files`);
+    console.log(`- WOFF2: ${woff2Outputs} files`);
+    console.log(`- Total: ${allEntries.length} files`);
+    console.log(`\nFonts processed: ${fontResults.successful}/${fontFiles.length} successful`);
+
+    if (fontResults.failed > 0) {
+      console.log(`⚠️ Warning: ${fontResults.failed} fonts failed to process completely`);
+      console.log(`   However, the process was able to continue and generate ${allEntries.length} subset files.`);
+    }
+
     console.log('\n✅ Font processing complete!');
     console.log('The processed font files and CSS are ready for distribution.');
+
+    return {
+      success: allEntries.length > 0,
+      entries: allEntries,
+      stats: {
+        inputFonts: fontFiles.length,
+        successfulFonts: fontResults.successful,
+        failedFonts: fontResults.failed,
+        totalSubsets: allEntries.length
+      }
+    };
   } catch (error) {
-    console.error('❌ Error:', error);
-    process.exit(1);
+    console.error('\n❌ Error building fonts:', error);
+    return { success: false, error };
+  } finally {
+    // Clean up temp directory
+    try {
+      if (fs.existsSync(TEMP_DIR)) {
+        fs.rmSync(TEMP_DIR, { recursive: true, force: true });
+        console.log('🧹 Cleaned up temporary files');
+      }
+    } catch (error) {
+      console.warn(`⚠️ Warning: Could not clean up temp directory: ${error.message}`);
+    }
   }
 }
-
-// =======================================================
-// CLI Tool
-// =======================================================
 
 /**
  * CLI tool - copy font files to user's project
@@ -536,7 +615,10 @@ if (require.main === module) {
   if (isCliTool) {
     runCliTool();
   } else {
-    buildFonts();
+    buildFonts().catch(error => {
+      console.error('❌ Error:', error);
+      process.exit(1);
+    });
   }
 }
 

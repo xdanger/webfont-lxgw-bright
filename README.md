@@ -7,7 +7,7 @@
 
 ## 特点
 
-- 将大型字体文件（>1MB）拆分成较小的子集（<512KB）
+- 将大型字体文件（>4MB）拆分成较小的子集（通常 <200KB)
 - 按Unicode范围进行拆分，确保每个文件大小适合网页加载
 - 支持不同的字重和样式变体
 - 简洁的JavaScript API
@@ -87,7 +87,9 @@ configureLXGWBright({
 webfont-lxgw-bright/
 ├── fonts/            - 生成的字体子集文件
 ├── scripts/          - 开发者工具脚本
-│   └── build-fonts.js- 字体处理脚本
+│   ├── build-fonts.js        - 原始字体处理脚本
+│   ├── build-fonts-fontmin.mjs  - 基于Fontmin的字体处理脚本
+│   └── build-fonts-fonttools.mjs - 基于Python fonttools的字体处理脚本
 ├── src/              - 源代码
 │   └── cli.js        - CLI工具
 ├── src-fonts/        - 原始字体文件目录
@@ -106,14 +108,49 @@ webfont-lxgw-bright/
 
 1. 将原始字体文件放入`src-fonts`目录
 2. 安装开发依赖：`npm install`
-3. 安装Python fonttools：`pip install fonttools`
-4. 运行字体处理脚本：`npm run dev:build-fonts`
-5. 脚本会处理字体并生成子集文件到`fonts`目录
+3. 选择以下方法之一处理字体：
+
+#### 方法一：使用Python fonttools（推荐）
+
+fonttools生成的子集文件大小更小，处理质量更高。
+
+1. 安装Python fonttools及其依赖：
+
+   ```bash
+   pip install fonttools brotli zopfli
+   ```
+
+2. 运行fonttools字体处理脚本：
+
+   ```bash
+   npm run dev:build-fonts-fonttools
+   ```
+
+#### 方法二：使用Fontmin
+
+如果不想安装Python依赖，可以使用纯JavaScript的Fontmin方案。
+
+1. 运行Fontmin字体处理脚本：
+
+   ```bash
+   npm run dev:build-fonts-fontmin
+   ```
+
+两种方法都会处理字体并生成子集文件到`fonts`目录以及CSS文件。
 
 ### 发布新版本
 
 1. 更新版本号：`npm version patch|minor|major`
 2. 发布到npm：`npm publish`
+
+## 运行测试
+
+项目包含一个HTML测试文件，可以用来测试字体子集的加载情况：
+
+```bash
+# 处理字体后
+open test.html
+```
 
 ## 许可证
 
