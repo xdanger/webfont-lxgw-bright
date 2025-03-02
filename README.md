@@ -29,11 +29,36 @@ yarn add xdanger/webfont-lxgw-bright
 
 ### 选项1: 通过CSS导入
 
+在大多数项目中（使用webpack、Parcel等构建工具）：
+
 ```css
+/* 在使用webpack/Parcel等构建工具的项目中 */
 @import '~webfont-lxgw-bright';
 
 body {
-  font-family: 'LXGWBright', sans-serif;
+  font-family: 'LXGW Bright', sans-serif;
+}
+```
+
+在不支持`~`别名的环境中，使用相对路径：
+
+```css
+/* 指定完整相对路径 */
+@import '../node_modules/webfont-lxgw-bright/index.css';
+
+body {
+  font-family: 'LXGW Bright', sans-serif;
+}
+```
+
+在现代项目中可以使用更简洁的导入（无需~前缀）：
+
+```css
+/* 现代构建工具通常可以解析这种导入 */
+@import 'webfont-lxgw-bright';
+
+body {
+  font-family: 'LXGW Bright', sans-serif;
 }
 ```
 
@@ -72,7 +97,7 @@ import 'webfont-lxgw-bright';
 
 function App() {
   return (
-    <div style={{ fontFamily: 'LXGWBright, sans-serif' }}>
+    <div style={{ fontFamily: 'LXGW Bright, sans-serif' }}>
       你好，这是霞鹜晰黑字体！
     </div>
   );
@@ -151,7 +176,7 @@ function App() {
 @import '~webfont-lxgw-bright';
 
 body {
-  font-family: 'LXGWBright', sans-serif;
+  font-family: 'LXGW Bright', sans-serif;
 }
 ```
 
@@ -172,7 +197,7 @@ import 'webfont-lxgw-bright';
 export default function RootLayout({ children }) {
   return (
     <html lang="zh-CN">
-      <body style={{ fontFamily: 'LXGWBright, sans-serif' }}>
+      <body style={{ fontFamily: 'LXGW Bright, sans-serif' }}>
         {children}
       </body>
     </html>
@@ -189,7 +214,19 @@ import path from 'path';
 
 // 指向node_modules中的字体文件
 export const lxgwBright = localFont({
-  src: path.resolve('./node_modules/webfont-lxgw-bright/fonts'),
+  src: [
+    {
+      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Regular.subset.basic-latin.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Italic.subset.basic-latin.woff2',
+      weight: '400',
+      style: 'italic',
+    },
+    // 可根据需要添加其他字重和样式
+  ],
   variable: '--font-lxgw-bright',
 });
 
@@ -302,7 +339,7 @@ export default Layout;
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import 'webfont-lxgw-bright'; // 导入字体
+import 'webfont-lxgw-bright'; // 导入字体（Vite通常可以直接解析）
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -311,7 +348,18 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 );
 ```
 
-如果使用CSS预处理器，确保正确配置了`~`别名：
+在CSS文件中使用（Vite通常不需要~前缀）：
+
+```css
+/* 在Vite项目中 */
+@import 'webfont-lxgw-bright';
+
+body {
+  font-family: 'LXGW Bright', sans-serif;
+}
+```
+
+如果遇到导入路径问题，可以在vite.config.js中配置别名：
 
 ```javascript
 // vite.config.js
@@ -323,20 +371,10 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '~': path.resolve(__dirname, 'node_modules'),
+      'webfont-lxgw-bright': path.resolve(__dirname, 'node_modules/webfont-lxgw-bright'),
     },
   },
 });
-```
-
-然后在你的CSS文件中：
-
-```css
-@import '~webfont-lxgw-bright';
-
-body {
-  font-family: 'LXGWBright', sans-serif;
-}
 ```
 
 ## 高级配置
@@ -355,12 +393,12 @@ configureLXGWBright({
 
 ## 支持的字体变体
 
-- LXGWBright-Light (300)
-- LXGWBright-LightItalic (300 italic)
-- LXGWBright-Regular (400)
-- LXGWBright-Italic (400 italic)
-- LXGWBright-Medium (500)
-- LXGWBright-MediumItalic (500 italic)
+- LXGW Bright-Light (300)
+- LXGW Bright-LightItalic (300 italic)
+- LXGW Bright-Regular (400)
+- LXGW Bright-Italic (400 italic)
+- LXGW Bright-Medium (500)
+- LXGW Bright-MediumItalic (500 italic)
 
 ## 项目结构
 

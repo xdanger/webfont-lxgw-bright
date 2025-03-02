@@ -15,7 +15,7 @@ const stat = promisify(fs.stat);
 const FONTS_DIR = path.join(__dirname, '..', 'fonts');
 
 // 字体族名
-const FONT_FAMILIES = ['LXGWBright', 'LXGWBrightMedium', 'LXGWBrightLight'];
+const FONT_FAMILIES = ['LXGW Bright', 'LXGW Bright Medium', 'LXGW Bright Light'];
 
 /**
  * 分析字体子集文件大小分布

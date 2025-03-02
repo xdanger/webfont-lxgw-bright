@@ -17,7 +17,7 @@ const execPromise = promisify(exec);
 // =======================================================
 
 // Font family constants
-const LXGWBright = 'LXGWBright';
+const LXGWBright = 'LXGW Bright';
 
 /**
  * Helper function to configure font
@@ -596,7 +596,7 @@ function runCliTool() {
     console.log('\nTo use the fonts in your project:');
     console.log(`CSS import: @import url('./fonts/lxgw-bright.css');`);
     console.log(`HTML: <link rel="stylesheet" href="./fonts/lxgw-bright.css">`);
-    console.log(`CSS usage: font-family: 'LXGWBright', sans-serif;`);
+    console.log(`CSS usage: font-family: 'LXGW Bright', sans-serif;`);
   } catch (err) {
     console.error('❌ Error installing fonts:', err);
     process.exit(1);

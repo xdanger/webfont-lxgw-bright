@@ -144,14 +144,14 @@
             <li>创建 <code>test/full-font.css</code> 文件（与本测试页在同一目录），内容如下：</li>
         </ol>
         <pre>@font-face {
-  font-family: 'LXGWBrightFull';
+  font-family: 'LXGW Bright Full';
   src: url('../src-fonts/LXGWBright.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
-  font-family: 'LXGWBrightFull';
+  font-family: 'LXGW Bright Full';
   src: url('../src-fonts/LXGWBright-Italic.woff2') format('woff2');
   font-weight: normal;
   font-style: italic;
@@ -282,7 +282,7 @@
 
             // 显示测试内容
             document.getElementById('subsetContent').style.display = 'block';
-            document.getElementById('subsetContent').style.fontFamily = 'LXGWBright, sans-serif';
+            document.getElementById('subsetContent').style.fontFamily = 'LXGW Bright, sans-serif';
             document.getElementById('subsetContent').innerHTML = testContent;
 
             // 等待字体加载完成
@@ -355,7 +355,7 @@
 
             // 显示测试内容
             document.getElementById('fullContent').style.display = 'block';
-            document.getElementById('fullContent').style.fontFamily = 'LXGWBrightFull, sans-serif';
+            document.getElementById('fullContent').style.fontFamily = 'LXGW Bright Full, sans-serif';
             document.getElementById('fullContent').innerHTML = testContent;
 
             // 等待字体加载完成

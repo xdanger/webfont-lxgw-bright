@@ -3,7 +3,7 @@
  */
 
 // Font family constants
-const LXGWBright = 'LXGWBright';
+const LXGWBright = 'LXGW Bright';
 
 /**
  * Helper function to configure font
