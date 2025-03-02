@@ -155,6 +155,190 @@ body {
 }
 ```
 
+### 选项5: 在其他前端框架中使用
+
+#### Next.js
+
+Next.js有多种方式加载字体，根据你使用的Next.js版本和路由方式：
+
+##### Next.js 13+ (App Router)
+
+在`app/layout.js`文件中：
+
+```javascript
+// app/layout.js
+import 'webfont-lxgw-bright';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="zh-CN">
+      <body style={{ fontFamily: 'LXGWBright, sans-serif' }}>
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+如果要使用Next.js字体优化功能，可以创建一个本地字体配置：
+
+```javascript
+// app/fonts.js
+import localFont from 'next/font/local';
+import path from 'path';
+
+// 指向node_modules中的字体文件
+export const lxgwBright = localFont({
+  src: path.resolve('./node_modules/webfont-lxgw-bright/fonts'),
+  variable: '--font-lxgw-bright',
+});
+
+// 然后在layout.js中使用
+// app/layout.js
+import { lxgwBright } from './fonts';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="zh-CN">
+      <body className={`${lxgwBright.variable}`}>
+        {children}
+      </body>
+    </html>
+  );
+}
+
+// 在CSS中使用
+// app/globals.css
+body {
+  font-family: var(--font-lxgw-bright), sans-serif;
+}
+```
+
+##### Next.js (Pages Router)
+
+在`pages/_app.js`中：
+
+```javascript
+// pages/_app.js
+import 'webfont-lxgw-bright';
+import { LXGWBright } from 'webfont-lxgw-bright';
+
+function MyApp({ Component, pageProps }) {
+  return (
+    <>
+      <style jsx global>{`
+        body {
+          font-family: ${LXGWBright}, sans-serif;
+        }
+      `}</style>
+      <Component {...pageProps} />
+    </>
+  );
+}
+
+export default MyApp;
+```
+
+#### Gatsby
+
+在Gatsby项目中，可以在`gatsby-browser.js`文件中导入字体：
+
+```javascript
+// gatsby-browser.js
+import 'webfont-lxgw-bright';
+```
+
+然后在全局样式或组件中使用：
+
+```javascript
+// src/components/layout.js
+import React from 'react';
+import { LXGWBright } from 'webfont-lxgw-bright';
+
+const Layout = ({ children }) => {
+  return (
+    <div style={{ fontFamily: LXGWBright }}>
+      {children}
+    </div>
+  );
+};
+
+export default Layout;
+```
+
+如果你使用`gatsby-plugin-styled-components`，可以创建全局样式：
+
+```javascript
+// src/components/layout.js
+import React from 'react';
+import { createGlobalStyle } from 'styled-components';
+import { LXGWBright } from 'webfont-lxgw-bright';
+import 'webfont-lxgw-bright';
+
+const GlobalStyle = createGlobalStyle`
+  body {
+    font-family: ${LXGWBright}, sans-serif;
+  }
+`;
+
+const Layout = ({ children }) => {
+  return (
+    <>
+      <GlobalStyle />
+      {children}
+    </>
+  );
+};
+
+export default Layout;
+```
+
+#### Vite
+
+在Vite项目中使用与标准React项目类似：
+
+```javascript
+// main.jsx 或 main.tsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import 'webfont-lxgw-bright'; // 导入字体
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+```
+
+如果使用CSS预处理器，确保正确配置了`~`别名：
+
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '~': path.resolve(__dirname, 'node_modules'),
+    },
+  },
+});
+```
+
+然后在你的CSS文件中：
+
+```css
+@import '~webfont-lxgw-bright';
+
+body {
+  font-family: 'LXGWBright', sans-serif;
+}
+```
+
 ## 高级配置
 
 可以使用配置函数来自定义字体设置：
