@@ -13,6 +13,7 @@
 - 简洁的JavaScript API
 - 浏览器会自动只加载需要的字体子集，提高页面加载性能
 - 支持Next.js优化字体加载
+- 支持多字重混合使用，满足更丰富的排版需求
 
 ## 安装
 
@@ -252,6 +253,91 @@ export default function Page() {
   );
 }
 ```
+
+##### 混用多个字重
+
+如果需要在页面中混用多个字重（如Regular、Medium、Light等），可以按照以下步骤配置:
+
+1. 为每个字重单独配置:
+
+```javascript
+// app/fonts.js
+import localFont from 'next/font/local';
+
+// 常规字重 Regular (400)
+export const lxgwBrightRegular = localFont({
+  src: [
+    {
+      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2',
+      weight: '400',
+      style: 'normal',
+    }
+  ],
+  variable: '--font-lxgw-bright',
+  preload: false,
+  display: 'swap',
+  fallback: ['system-ui', 'sans-serif'],
+});
+
+// 中等字重 Medium (500) - LXGW Bright 的最粗字重
+export const lxgwBrightMedium = localFont({
+  src: [
+    {
+      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Medium.0.woff2',
+      weight: '500',
+      style: 'normal',
+    }
+  ],
+  variable: '--font-lxgw-bright-medium',
+  preload: false,
+  display: 'swap',
+  fallback: ['system-ui', 'sans-serif'],
+});
+```
+
+2. 在布局中同时应用所有字重:
+
+```javascript
+// app/layout.js
+import { lxgwBrightRegular, lxgwBrightMedium } from './fonts';
+import 'webfont-lxgw-bright/next/styles.css';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="zh-CN" className={`${lxgwBrightRegular.variable} ${lxgwBrightMedium.variable}`}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+3. 在组件中使用不同字重:
+
+```javascript
+import { lxgwBrightRegular, lxgwBrightMedium } from './fonts';
+
+export default function Page() {
+  return (
+    <div>
+      <p className={lxgwBrightRegular.className}>
+        这是常规字重文本
+      </p>
+
+      <p className={lxgwBrightMedium.className}>
+        这是中等字重文本
+      </p>
+
+      <p className={lxgwBrightRegular.className}>
+        这是常规文本，但这里有
+        <span className={lxgwBrightMedium.className}>中等字重强调</span>
+        的内容。
+      </p>
+    </div>
+  );
+}
+```
+
+更多混用多个字重的详细示例，请参考 [next/examples.js](https://github.com/xdanger/webfont-lxgw-bright/blob/main/next/examples.js)。
 
 ##### 在Pages Router中使用
 
