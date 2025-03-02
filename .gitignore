@@ -231,3 +231,6 @@ logs
 # Keep font directories themselves
 !/fonts/.gitkeep
 !/src-fonts/.gitkeep
+
+# Next.js
+.next

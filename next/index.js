@@ -1,75 +1,58 @@
 /**
  * LXGW Bright Webfont - Next.js Integration
  *
- * This file provides an optimized font loading solution for Next.js projects
- * It directly uses font files from node_modules without copying them to the project
+ * 为 Next.js 提供 LXGW Bright 字体的路径和使用指南
  */
 
 // Export font name constant
 export const LXGWBright = 'LXGW Bright';
 
 /**
- * 获取 LXGW Bright 字体配置
+ * 字体文件路径
  *
- * 此函数返回用于 next/font/local 的配置对象
- * 符合 Next.js 对字体加载器的严格要求
- *
- * @param {Object} options 字体配置选项
- * @param {string} options.variable CSS变量名 (默认: '--font-lxgw-bright')
- * @param {boolean} options.preload 是否预加载 (默认: false，推荐用于CJK字体)
- * @param {string} options.display 字体显示方式 (默认: 'swap')
- * @param {boolean} options.fallback 是否使用备用字体 (默认: true)
- * @returns {Object} 返回可直接传递给 localFont() 的配置对象
- *
- * @example
- * // 在 Next.js 项目的 fonts.js 文件中:
- * import { getLXGWBrightConfig } from 'webfont-lxgw-bright/next';
- * import localFont from 'next/font/local';
- *
- * // 正确用法: 直接将配置传递给 localFont
- * export const lxgwBright = localFont(getLXGWBrightConfig());
+ * 导出字体文件的路径，供 Next.js 字体加载器使用
  */
-export function getLXGWBrightConfig(options = {}) {
-  const {
-    variable = '--font-lxgw-bright',
-    preload = false,
-    display = 'swap',
-    fallback = true
-  } = options;
-
-  // 返回字体配置对象
-  return {
-    src: [
-      // 仅包含核心字体文件，其余通过CSS自动处理
-      {
-        path: require.resolve('webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2'),
-        weight: '400',
-        style: 'normal',
-      }
-    ],
-    variable,
-    preload,
-    display,
-    fallback: fallback ? ['system-ui', 'sans-serif'] : undefined,
-  };
-}
+export const fontPath = {
+  regular: require.resolve('webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2'),
+};
 
 /**
- * 使用指南
+ * Next.js Font 加载指南
  *
- * 完整设置LXGW Bright字体需要两步:
- * 1. 使用 localFont 创建字体加载器
- * 2. 导入切片字体CSS
+ * Next.js 要求字体配置必须是硬编码的字面量，不能使用导入的配置对象。
  *
- * @example
- * // 1. 在fonts.js中创建字体加载器
- * import { getLXGWBrightConfig } from 'webfont-lxgw-bright/next';
+ * 正确用法:
+ *
+ * ```javascript
+ * // app/fonts.js
  * import localFont from 'next/font/local';
  *
- * // 重要: 直接调用 localFont 并传入配置
- * export const lxgwBright = localFont(getLXGWBrightConfig());
+ * // 必须使用硬编码的字面量配置
+ * export const lxgwBright = localFont({
+ *   src: [
+ *     {
+ *       path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2',
+ *       weight: '400',
+ *       style: 'normal',
+ *     }
+ *   ],
+ *   variable: '--font-lxgw-bright',
+ *   preload: false,
+ *   display: 'swap',
+ *   fallback: ['system-ui', 'sans-serif'],
+ * });
+ * ```
  *
- * // 2. 在layout.js中使用
+ * 推荐配置:
+ * - variable: '--font-lxgw-bright' (用于 CSS 变量)
+ * - preload: false (CJK 字体推荐)
+ * - display: 'swap' 或 'optional'
+ * - fallback: ['system-ui', 'sans-serif']
+ *
+ * 同时导入切片字体CSS:
+ *
+ * ```javascript
+ * // app/layout.js
  * import { lxgwBright } from './fonts';
  * import 'webfont-lxgw-bright/next/styles.css';
  *
@@ -80,4 +63,5 @@ export function getLXGWBrightConfig(options = {}) {
  *     </html>
  *   );
  * }
+ * ```
  */

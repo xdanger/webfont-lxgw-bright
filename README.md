@@ -192,13 +192,26 @@ body {
 1. 创建字体配置文件:
 
 ```javascript
-// app/fonts.js 或 lib/fonts.js
-import { getLXGWBrightConfig } from 'webfont-lxgw-bright/next';
+// app/fonts.js
 import localFont from 'next/font/local';
 
-// 直接调用 localFont 并传入配置
-export const lxgwBright = localFont(getLXGWBrightConfig());
+// 必须使用硬编码的字面量配置
+export const lxgwBright = localFont({
+  src: [
+    {
+      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2',
+      weight: '400',
+      style: 'normal',
+    }
+  ],
+  variable: '--font-lxgw-bright',
+  preload: false,
+  display: 'swap',
+  fallback: ['system-ui', 'sans-serif'],
+});
 ```
+
+> 注意：Next.js 要求字体配置必须使用硬编码的字面量，不能使用导入的配置对象
 
 2. 在根布局文件中使用字体和样式:
 
@@ -245,21 +258,28 @@ export default function Page() {
 对于使用Pages Router的Next.js项目:
 
 ```javascript
-// lib/fonts.js
-import { getLXGWBrightConfig } from 'webfont-lxgw-bright/next';
-import localFont from 'next/font/local';
-
-export const lxgwBright = localFont(getLXGWBrightConfig());
-```
-
-```javascript
 // pages/_app.js
-import { lxgwBright } from '../lib/fonts';
+import localFont from 'next/font/local';
 import 'webfont-lxgw-bright/next/styles.css';
+
+// 必须使用硬编码的字面量配置
+const lxgwBright = localFont({
+  src: [
+    {
+      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2',
+      weight: '400',
+      style: 'normal',
+    }
+  ],
+  variable: '--font-lxgw-bright',
+  preload: false,
+  display: 'swap',
+  fallback: ['system-ui', 'sans-serif'],
+});
 
 function MyApp({ Component, pageProps }) {
   return (
-    <main className={lxgwBright.className}>
+    <main className={lxgwBright.variable}>
       <Component {...pageProps} />
     </main>
   );
@@ -304,16 +324,22 @@ export default function Page() {
 
 ```javascript
 // lib/fonts.js
-import { getLXGWBrightConfig } from 'webfont-lxgw-bright/next';
 import localFont from 'next/font/local';
 
 // 使用自定义配置
-export const lxgwBright = localFont(getLXGWBrightConfig({
+export const lxgwBrightCustom = localFont({
+  src: [
+    {
+      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2',
+      weight: '400',
+      style: 'normal',
+    }
+  ],
   variable: '--font-lxgw',     // 自定义CSS变量名
   preload: false,              // 禁用预加载（推荐用于CJK字体）
   display: 'optional',         // 使用可选字体显示策略
-  fallback: true               // 启用后备字体
-}));
+  fallback: ['system-ui', 'sans-serif']  // 设置后备字体
+});
 ```
 
 ##### 为什么这样设计?
@@ -323,7 +349,7 @@ export const lxgwBright = localFont(getLXGWBrightConfig({
 1. **无需复制字体文件** - 所有字体文件保留在node_modules中
 2. **自动处理所有字体子集** - 不需要手动引用大量切片字体文件
 3. **完全兼容Next.js字体优化** - 严格遵循Next.js字体加载规则
-4. **简化使用流程** - 只需两行代码即可完成配置
+4. **简化使用流程** - 只需硬编码配置即可完成设置
 
 完整示例请查看 [next/examples.js](https://github.com/xdanger/webfont-lxgw-bright/blob/main/next/examples.js)
 
