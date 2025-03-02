@@ -14,6 +14,7 @@
 - 浏览器会自动只加载需要的字体子集，提高页面加载性能
 - 支持Next.js优化字体加载
 - 支持多字重混合使用，满足更丰富的排版需求
+- 自动化脚本生成Next.js字体配置，简化开发流程
 
 ## 安装
 
@@ -182,11 +183,11 @@ body {
 }
 ```
 
-### 选项5: 在其他前端框架中使用
-
-#### Next.js
+### 选项5: 在Next.js中使用
 
 对于Next.js项目，本包提供了专门优化的集成方式，使用原生字体优化功能而无需复制字体文件。
+
+#### 方法1: 手动配置 (基础用法)
 
 ##### 基本用法 (App Router)
 
@@ -254,91 +255,6 @@ export default function Page() {
 }
 ```
 
-##### 混用多个字重
-
-如果需要在页面中混用多个字重（如Regular、Medium、Light等），可以按照以下步骤配置:
-
-1. 为每个字重单独配置:
-
-```javascript
-// app/fonts.js
-import localFont from 'next/font/local';
-
-// 常规字重 Regular (400)
-export const lxgwBrightRegular = localFont({
-  src: [
-    {
-      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2',
-      weight: '400',
-      style: 'normal',
-    }
-  ],
-  variable: '--font-lxgw-bright',
-  preload: false,
-  display: 'swap',
-  fallback: ['system-ui', 'sans-serif'],
-});
-
-// 中等字重 Medium (500) - LXGW Bright 的最粗字重
-export const lxgwBrightMedium = localFont({
-  src: [
-    {
-      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Medium.0.woff2',
-      weight: '500',
-      style: 'normal',
-    }
-  ],
-  variable: '--font-lxgw-bright-medium',
-  preload: false,
-  display: 'swap',
-  fallback: ['system-ui', 'sans-serif'],
-});
-```
-
-2. 在布局中同时应用所有字重:
-
-```javascript
-// app/layout.js
-import { lxgwBrightRegular, lxgwBrightMedium } from './fonts';
-import 'webfont-lxgw-bright/next/styles.css';
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="zh-CN" className={`${lxgwBrightRegular.variable} ${lxgwBrightMedium.variable}`}>
-      <body>{children}</body>
-    </html>
-  );
-}
-```
-
-3. 在组件中使用不同字重:
-
-```javascript
-import { lxgwBrightRegular, lxgwBrightMedium } from './fonts';
-
-export default function Page() {
-  return (
-    <div>
-      <p className={lxgwBrightRegular.className}>
-        这是常规字重文本
-      </p>
-
-      <p className={lxgwBrightMedium.className}>
-        这是中等字重文本
-      </p>
-
-      <p className={lxgwBrightRegular.className}>
-        这是常规文本，但这里有
-        <span className={lxgwBrightMedium.className}>中等字重强调</span>
-        的内容。
-      </p>
-    </div>
-  );
-}
-```
-
-更多混用多个字重的详细示例，请参考 [next/examples.js](https://github.com/xdanger/webfont-lxgw-bright/blob/main/next/examples.js)。
-
 ##### 在Pages Router中使用
 
 对于使用Pages Router的Next.js项目:
@@ -374,7 +290,268 @@ function MyApp({ Component, pageProps }) {
 export default MyApp;
 ```
 
-##### 在Tailwind CSS中使用
+#### 方法2: 使用自动化脚本 (推荐)
+
+为简化配置过程，本包提供了自动生成字体配置的脚本。这是推荐的方法，尤其是当需要使用多个字重和处理大量字体子集文件时。
+
+1. 将脚本复制到项目中:
+
+```javascript
+// scripts/generate-fonts.js
+/**
+ * 自动生成 fonts.js 配置文件
+ *
+ * 此脚本会扫描 node_modules/webfont-lxgw-bright/fonts 目录下的所有字体文件，
+ * 并为每种字重生成完整的 Next.js localFont 配置。
+ */
+
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+// 配置项
+const config = {
+  fontDir: path.resolve(__dirname, '../node_modules/webfont-lxgw-bright/fonts'),
+  outputFile: path.resolve(__dirname, '../app/fonts.js'),
+  fontWeights: ['Regular', 'Light', 'Medium'],
+  fontExportNames: {
+    'Regular': 'lxgwBright',
+    'Light': 'lxgwBrightLight',
+    'Medium': 'lxgwBrightMedium'
+  },
+  fontWeightValues: {
+    'Regular': '400',
+    'Light': '300',
+    'Medium': '500'
+  },
+  // 范围编号组，方便添加注释
+  rangeGroups: {
+    '0-3': '基本拉丁字符和扩展拉丁字符集',
+    '4-5': 'CJK符号和标点',
+    '20-29': '中日韩统一表意文字(CJK Unified Ideographs) 第一组',
+    '30-39': '中日韩统一表意文字 第二组',
+    '40-49': '中日韩统一表意文字 第三组',
+    '50-57': '中日韩统一表意文字 第四组'
+  }
+};
+
+/**
+ * 获取指定字重的所有字体文件
+ * @param {string} weight 字重名称 (Regular|Light|Medium)
+ * @returns {string[]} 字体文件列表
+ */
+function getFontFiles(weight) {
+  try {
+    // 使用命令行查找所有匹配的.woff2文件并按数字排序
+    const command = `find ${config.fontDir} -name "LXGWBright-${weight}.*.woff2" | sort -V`;
+    const output = execSync(command).toString().trim();
+    return output.split('\n').filter(Boolean);
+  } catch (error) {
+    console.error(`无法获取${weight}字重的字体文件:`, error);
+    return [];
+  }
+}
+
+/**
+ * 从文件路径中提取序号
+ * @param {string} filePath 文件路径
+ * @returns {string} 序号
+ */
+function extractNumberFromPath(filePath) {
+  const fileName = path.basename(filePath);
+  const match = fileName.match(/\.(\d+)\.woff2$/);
+  return match ? match[1] : '';
+}
+
+/**
+ * 将驼峰命名转换为连字符分隔的小写形式
+ * @param {string} str 驼峰命名的字符串
+ * @returns {string} 转换后的字符串
+ */
+function camelToKebabCase(str) {
+  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+/**
+ * 生成单个字体的配置代码
+ * @param {string} weight 字重名称
+ * @param {string[]} files 字体文件列表
+ * @returns {string} 配置代码
+ */
+function generateFontConfig(weight, files) {
+  const exportName = config.fontExportNames[weight];
+  const fontWeight = config.fontWeightValues[weight];
+
+  // 正确格式化CSS变量名: 变成 --font-lxgw-bright-light 这种格式
+  const cssVarName = `--font-${camelToKebabCase(exportName)}`;
+
+  let lastGroupComment = '';
+  let srcItems = files.map(file => {
+    const relativePath = `../node_modules/webfont-lxgw-bright/fonts/${path.basename(file)}`;
+    const number = extractNumberFromPath(file);
+
+    // 检查是否需要添加分组注释
+    let commentLine = '';
+    for (const [range, comment] of Object.entries(config.rangeGroups)) {
+      const [start, end] = range.split('-').map(Number);
+      const num = parseInt(number, 10);
+      if (num >= start && num <= end) {
+        const groupComment = `// ${comment}`;
+        if (groupComment !== lastGroupComment) {
+          lastGroupComment = groupComment;
+          commentLine = groupComment;
+        }
+        break;
+      }
+    }
+
+    return [
+      commentLine ? `    ${commentLine}` : null,
+      `    {`,
+      `      path: '${relativePath}',`,
+      `      weight: '${fontWeight}',`,
+      `      style: 'normal',`,
+      `    }`
+    ].filter(Boolean).join('\n');
+  });
+
+  return `export const ${exportName} = localFont({
+  src: [
+${srcItems.join(',\n')}
+  ],
+  variable: '${cssVarName}',
+  preload: false,
+  display: 'swap',
+  fallback: ['system-ui', 'sans-serif'],
+});`;
+}
+
+// 主函数
+function main() {
+  console.log('开始生成fonts.js文件...');
+
+  // 收集所有字重的文件
+  const fontsByWeight = {};
+  for (const weight of config.fontWeights) {
+    const files = getFontFiles(weight);
+    if (files.length === 0) {
+      console.warn(`警告: 未找到${weight}字重的字体文件`);
+      continue;
+    }
+    fontsByWeight[weight] = files;
+    console.log(`找到${weight}字重的字体文件: ${files.length}个`);
+  }
+
+  // 生成配置代码
+  let configCode = `/**
+ * 自动生成的 Next.js 字体配置文件
+ * 由 scripts/generate-fonts.js 脚本生成
+ * 生成时间: ${new Date().toISOString()}
+ *
+ * 包含以下字重:
+ * ${config.fontWeights.map(w => `- ${w} (${config.fontWeightValues[w]})`).join('\n * ')}
+ */
+import localFont from 'next/font/local';
+
+`;
+
+  // 为每个字重生成配置
+  for (const weight of config.fontWeights) {
+    if (fontsByWeight[weight]) {
+      configCode += generateFontConfig(weight, fontsByWeight[weight]) + '\n\n';
+    }
+  }
+
+  // 写入文件
+  fs.writeFileSync(config.outputFile, configCode);
+  console.log(`字体配置已成功写入: ${config.outputFile}`);
+}
+
+// 执行主函数
+main();
+```
+
+2. 将脚本添加到package.json中:
+
+```json
+{
+  "scripts": {
+    "generate-fonts": "node scripts/generate-fonts.js"
+  }
+}
+```
+
+3. 运行脚本生成配置:
+
+```bash
+npm run generate-fonts
+```
+
+4. 在布局中使用生成的字体配置:
+
+```javascript
+// app/layout.js
+import { lxgwBright, lxgwBrightLight, lxgwBrightMedium } from './fonts';
+import 'webfont-lxgw-bright/next/styles.css';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="zh-CN" className={`${lxgwBright.variable} ${lxgwBrightLight.variable} ${lxgwBrightMedium.variable}`}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+自动生成脚本的优势:
+
+- **自动扫描所有字体文件** - 无需手动列出数十个字体文件路径
+- **自动分类字体子集** - 根据Unicode范围组织字体文件，提供注释说明
+- **标准化变量命名** - 使用一致的kebab-case格式，如 `--font-lxgw-bright-light`
+- **灵活配置** - 可以轻松添加或移除字重，修改导出名称
+- **提高开发效率** - 减少手动编写配置的时间和错误
+
+#### 多字重混合使用
+
+使用自动生成的字体配置后，可以轻松地在页面中混用多个字重:
+
+```javascript
+import { lxgwBright, lxgwBrightLight, lxgwBrightMedium } from './fonts';
+
+export default function Page() {
+  return (
+    <div>
+      {/* 方法1: 使用className（推荐） */}
+      <div className={lxgwBright.className}>
+        <p>这是使用霞鹜晰黑常规字重(400)的文本</p>
+      </div>
+
+      <div className={lxgwBrightLight.className}>
+        <p>这是使用霞鹜晰黑轻量字重(300)的文本</p>
+      </div>
+
+      <div className={lxgwBrightMedium.className}>
+        <p>这是使用霞鹜晰黑中等字重(500)的文本</p>
+      </div>
+
+      {/* 方法2: 使用CSS变量 */}
+      <p style={{ fontFamily: 'var(--font-lxgw-bright)' }}>
+        这段文本使用CSS变量设置常规字体
+      </p>
+
+      <p style={{ fontFamily: 'var(--font-lxgw-bright-light)' }}>
+        这段文本使用CSS变量设置轻量字体
+      </p>
+
+      <p style={{ fontFamily: 'var(--font-lxgw-bright-medium)' }}>
+        这段文本使用CSS变量设置中等字体
+      </p>
+    </div>
+  );
+}
+```
+
+#### 在Tailwind CSS中使用
 
 配置Tailwind:
 
@@ -386,6 +563,8 @@ module.exports = {
       fontFamily: {
         sans: ['var(--font-lxgw-bright)', 'system-ui', 'sans-serif'],
         lxgw: ['var(--font-lxgw-bright)', 'sans-serif'],
+        'lxgw-light': ['var(--font-lxgw-bright-light)', 'sans-serif'],
+        'lxgw-medium': ['var(--font-lxgw-bright-medium)', 'sans-serif'],
       },
     },
   },
@@ -397,47 +576,14 @@ module.exports = {
 ```javascript
 export default function Page() {
   return (
-    <div className="font-lxgw">
-      你好，这是使用霞鹜晰黑字体的文本！
+    <div>
+      <p className="font-lxgw">这是常规字重文本</p>
+      <p className="font-lxgw-light">这是轻量字重文本</p>
+      <p className="font-lxgw-medium">这是中等字重文本</p>
     </div>
   );
 }
 ```
-
-##### 高级配置
-
-可以自定义字体加载行为:
-
-```javascript
-// lib/fonts.js
-import localFont from 'next/font/local';
-
-// 使用自定义配置
-export const lxgwBrightCustom = localFont({
-  src: [
-    {
-      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2',
-      weight: '400',
-      style: 'normal',
-    }
-  ],
-  variable: '--font-lxgw',     // 自定义CSS变量名
-  preload: false,              // 禁用预加载（推荐用于CJK字体）
-  display: 'optional',         // 使用可选字体显示策略
-  fallback: ['system-ui', 'sans-serif']  // 设置后备字体
-});
-```
-
-##### 为什么这样设计?
-
-我们的Next.js集成具有以下优势:
-
-1. **无需复制字体文件** - 所有字体文件保留在node_modules中
-2. **自动处理所有字体子集** - 不需要手动引用大量切片字体文件
-3. **完全兼容Next.js字体优化** - 严格遵循Next.js字体加载规则
-4. **简化使用流程** - 只需硬编码配置即可完成设置
-
-完整示例请查看 [next/examples.js](https://github.com/xdanger/webfont-lxgw-bright/blob/main/next/examples.js)
 
 ## 项目结构
 
