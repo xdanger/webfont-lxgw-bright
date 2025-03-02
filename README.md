@@ -12,6 +12,7 @@
 - 支持不同的字重和样式变体
 - 简洁的JavaScript API
 - 浏览器会自动只加载需要的字体子集，提高页面加载性能
+- 支持Next.js优化字体加载
 
 ## 安装
 
@@ -184,221 +185,147 @@ body {
 
 #### Next.js
 
-Next.js有多种方式加载字体，根据你使用的Next.js版本和路由方式：
+对于Next.js项目，本包提供了专门优化的集成方式，使用原生字体优化功能而无需复制字体文件。
 
-##### Next.js 13+ (App Router)
+##### 基本用法 (App Router)
 
-在`app/layout.js`文件中：
+1. 创建字体配置文件:
+
+```javascript
+// app/fonts.js 或 lib/fonts.js
+import { createLXGWBrightFont } from 'webfont-lxgw-bright/next';
+import localFont from 'next/font/local';
+
+// 创建字体加载器
+export const lxgwBright = createLXGWBrightFont()(localFont);
+```
+
+2. 在根布局文件中使用字体和样式:
 
 ```javascript
 // app/layout.js
-import 'webfont-lxgw-bright';
+import { lxgwBright } from './fonts';
+import 'webfont-lxgw-bright/next/styles.css'; // 导入切片字体CSS
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="zh-CN">
-      <body style={{ fontFamily: 'LXGW Bright, sans-serif' }}>
-        {children}
-      </body>
+    <html lang="zh-CN" className={lxgwBright.variable}>
+      <body>{children}</body>
     </html>
   );
 }
 ```
 
-如果要使用Next.js字体优化功能，可以创建一个本地字体配置：
+3. 在全局CSS中使用:
 
-```javascript
-// app/fonts.js
-import localFont from 'next/font/local';
-import path from 'path';
-
-// 指向node_modules中的字体文件
-export const lxgwBright = localFont({
-  src: [
-    {
-      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Regular.subset.basic-latin.woff2',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Italic.subset.basic-latin.woff2',
-      weight: '400',
-      style: 'italic',
-    },
-    // 可根据需要添加其他字重和样式
-  ],
-  variable: '--font-lxgw-bright',
-});
-
-// 然后在layout.js中使用
-// app/layout.js
-import { lxgwBright } from './fonts';
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="zh-CN">
-      <body className={`${lxgwBright.variable}`}>
-        {children}
-      </body>
-    </html>
-  );
-}
-
-// 在CSS中使用
-// app/globals.css
+```css
+/* app/globals.css */
 body {
   font-family: var(--font-lxgw-bright), sans-serif;
 }
 ```
 
-##### Next.js (Pages Router)
+或在组件中直接使用:
 
-在`pages/_app.js`中：
+```javascript
+// app/page.js
+import { lxgwBright } from './fonts';
+
+export default function Page() {
+  return (
+    <div className={lxgwBright.className}>
+      你好，这是使用霞鹜晰黑字体的文本！
+    </div>
+  );
+}
+```
+
+##### 在Pages Router中使用
+
+对于使用Pages Router的Next.js项目:
+
+```javascript
+// lib/fonts.js
+import { createLXGWBrightFont } from 'webfont-lxgw-bright/next';
+import localFont from 'next/font/local';
+
+export const lxgwBright = createLXGWBrightFont()(localFont);
+```
 
 ```javascript
 // pages/_app.js
-import 'webfont-lxgw-bright';
-import { LXGWBright } from 'webfont-lxgw-bright';
+import { lxgwBright } from '../lib/fonts';
+import 'webfont-lxgw-bright/next/styles.css';
 
 function MyApp({ Component, pageProps }) {
   return (
-    <>
-      <style jsx global>{`
-        body {
-          font-family: ${LXGWBright}, sans-serif;
-        }
-      `}</style>
+    <main className={lxgwBright.className}>
       <Component {...pageProps} />
-    </>
+    </main>
   );
 }
 
 export default MyApp;
 ```
 
-#### Gatsby
+##### 在Tailwind CSS中使用
 
-在Gatsby项目中，可以在`gatsby-browser.js`文件中导入字体：
-
-```javascript
-// gatsby-browser.js
-import 'webfont-lxgw-bright';
-```
-
-然后在全局样式或组件中使用：
+配置Tailwind:
 
 ```javascript
-// src/components/layout.js
-import React from 'react';
-import { LXGWBright } from 'webfont-lxgw-bright';
-
-const Layout = ({ children }) => {
-  return (
-    <div style={{ fontFamily: LXGWBright }}>
-      {children}
-    </div>
-  );
-};
-
-export default Layout;
-```
-
-如果你使用`gatsby-plugin-styled-components`，可以创建全局样式：
-
-```javascript
-// src/components/layout.js
-import React from 'react';
-import { createGlobalStyle } from 'styled-components';
-import { LXGWBright } from 'webfont-lxgw-bright';
-import 'webfont-lxgw-bright';
-
-const GlobalStyle = createGlobalStyle`
-  body {
-    font-family: ${LXGWBright}, sans-serif;
-  }
-`;
-
-const Layout = ({ children }) => {
-  return (
-    <>
-      <GlobalStyle />
-      {children}
-    </>
-  );
-};
-
-export default Layout;
-```
-
-#### Vite
-
-在Vite项目中使用与标准React项目类似：
-
-```javascript
-// main.jsx 或 main.tsx
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import 'webfont-lxgw-bright'; // 导入字体（Vite通常可以直接解析）
-
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
-```
-
-在CSS文件中使用（Vite通常不需要~前缀）：
-
-```css
-/* 在Vite项目中 */
-@import 'webfont-lxgw-bright';
-
-body {
-  font-family: 'LXGW Bright', sans-serif;
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['var(--font-lxgw-bright)', 'system-ui', 'sans-serif'],
+        lxgw: ['var(--font-lxgw-bright)', 'sans-serif'],
+      },
+    },
+  },
 }
 ```
 
-如果遇到导入路径问题，可以在vite.config.js中配置别名：
+然后在组件中使用:
 
 ```javascript
-// vite.config.js
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      'webfont-lxgw-bright': path.resolve(__dirname, 'node_modules/webfont-lxgw-bright'),
-    },
-  },
-});
+export default function Page() {
+  return (
+    <div className="font-lxgw">
+      你好，这是使用霞鹜晰黑字体的文本！
+    </div>
+  );
+}
 ```
 
-## 高级配置
+##### 高级配置
 
-可以使用配置函数来自定义字体设置：
+可以自定义字体加载行为:
 
 ```javascript
-import { configureLXGWBright } from 'webfont-lxgw-bright';
+// lib/fonts.js
+import { createLXGWBrightFont } from 'webfont-lxgw-bright/next';
+import localFont from 'next/font/local';
 
-// 配置字体选项
-configureLXGWBright({
-  weight: 400, // 可选值: 300 (Light), 400 (Regular), 500 (Medium)
-  style: 'normal' // 可选值: 'normal', 'italic'
-});
+// 使用自定义配置
+export const lxgwBright = createLXGWBrightFont({
+  variable: '--font-lxgw', // 自定义CSS变量名
+  preload: false,         // 禁用预加载（推荐用于CJK字体）
+  display: 'optional',    // 使用可选字体显示策略
+  fallback: true          // 启用后备字体
+})(localFont);
 ```
 
-## 支持的字体变体
+##### 为什么这样设计?
 
-- LXGW Bright-Light (300)
-- LXGW Bright-LightItalic (300 italic)
-- LXGW Bright-Regular (400)
-- LXGW Bright-Italic (400 italic)
-- LXGW Bright-Medium (500)
-- LXGW Bright-MediumItalic (500 italic)
+我们的Next.js集成具有以下优势:
+
+1. **无需复制字体文件** - 所有字体文件保留在node_modules中
+2. **自动处理所有字体子集** - 不需要手动引用大量切片字体文件
+3. **利用Next.js字体优化** - 结合next/font/local的优化与我们的字体子集化方案
+4. **简化使用流程** - 只需两行代码即可完成配置
+
+完整示例请查看 [next/examples.js](https://github.com/xdanger/webfont-lxgw-bright/blob/main/next/examples.js)
 
 ## 项目结构
 
