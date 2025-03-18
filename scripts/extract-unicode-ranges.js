@@ -10,7 +10,7 @@ const path = require('path');
 const https = require('https');
 
 // Configuration
-const CSS_URL = 'https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400';
+const CSS_URL = 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200..900&display=swap';
 const OUTPUT_FILE = path.join(__dirname, 'unicode-ranges.json');
 
 // Unicode block definitions for naming ranges
@@ -300,7 +300,7 @@ async function processFile() {
 
     // Create the output object
     const outputData = {
-      source: "Google Fonts - LXGW WenKai TC",
+      source: "Google Fonts - Noto Serif SC",
       extractDate: new Date().toISOString(),
       totalRanges: ranges.length,
       ranges: ranges

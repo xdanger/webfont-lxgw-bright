@@ -1,7 +1,7 @@
 {
     "name": "webfont-lxgw-bright",
-    "version": "0.6.2",
-    "description": "Webfont provider for LXGW-Bright with split font files",
+    "version": "0.7.1",
+    "description": "Webfont provider for LXGW-Bright with split font files and multiple weights",
     "main": "index.js",
     "files": [
         "index.css",
@@ -30,6 +30,6 @@
         "bright",
         "next.js"
     ],
-    "author": "",
-    "license": "OFL"
+    "author": "xdanger (https://github.com/xdanger)",
+    "license": "OFL-1.1"
 }

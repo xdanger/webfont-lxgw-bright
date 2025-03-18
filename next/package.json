@@ -1,8 +1,8 @@
 {
     "name": "webfont-lxgw-bright-next",
     "private": true,
-    "version": "0.2.2",
-    "description": "Next.js integration for LXGW Bright webfont",
+    "version": "0.7.1",
+    "description": "Next.js integration for LXGW Bright webfont with multiple weights and styles",
     "main": "index.js",
     "exports": {
         ".": "./index.js",

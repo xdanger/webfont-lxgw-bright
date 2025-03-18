@@ -1,0 +1,8 @@
+/**
+ * LXGW Bright Webfont - Next.js Styles
+ *
+ * This file imports the main CSS containing font-face definitions
+ * for all font weights and Unicode ranges of LXGW Bright.
+ */
+
+@import '../index.css';

@@ -52,55 +52,32 @@ const TEMP_DIR = path.join(PACKAGE_ROOT, 'temp');
 // Unicode Ranges
 // =======================================================
 
-// Path to unicode ranges JSON file
-const UNICODE_RANGES_JSON = path.join(__dirname, 'unicode-ranges.json');
+/**
+ * 提供更简化的Unicode范围
+ * @returns {Array} 简化后的Unicode范围
+ */
+function getSimplifiedUnicodeRanges() {
+  return [
+    { name: 'Basic Latin + Latin-1 Supplement', range: 'U+0000-00FF' },
+    { name: 'CJK Symbols and Punctuation', range: 'U+3000-303F' },
+    { name: 'CJK Common Characters', range: 'U+4E00-9FFF' } // 常用汉字
+  ];
+}
 
 /**
- * Reads unicode ranges from the JSON file
+ * Reads unicode ranges from the JSON file or uses simplified ranges
  * @returns {Array} Array of unicode range objects
  */
 function readUnicodeRanges() {
   try {
-    if (!fs.existsSync(UNICODE_RANGES_JSON)) {
-      console.warn(`Unicode ranges JSON file not found at: ${UNICODE_RANGES_JSON}`);
-      console.warn('Using default unicode ranges.');
-      // Return default ranges if file doesn't exist
-      return getDefaultUnicodeRanges();
-    }
-
-    const jsonContent = fs.readFileSync(UNICODE_RANGES_JSON, 'utf8');
-    const data = JSON.parse(jsonContent);
-
-    console.log(`Read ${data.totalRanges} unicode ranges from ${UNICODE_RANGES_JSON}`);
-    return data.ranges.map(range => ({
-      name: range.name.replace(/\s*\(Range \d+\)$/, ''),
-      range: range.range
-    }));
+    // 使用简化的Unicode范围，而不是从JSON文件读取
+    console.log('Using simplified unicode ranges for better font size.');
+    return getSimplifiedUnicodeRanges();
   } catch (error) {
     console.error(`Error reading unicode ranges: ${error.message}`);
-    console.warn('Using default unicode ranges instead.');
-    return getDefaultUnicodeRanges();
+    console.warn('Using simplified unicode ranges instead.');
+    return getSimplifiedUnicodeRanges();
   }
-}
-
-/**
- * Provides default unicode ranges if JSON file can't be read
- * @returns {Array} Default unicode ranges
- */
-function getDefaultUnicodeRanges() {
-  return [
-    { name: 'Basic Latin', range: 'U+0000-007F' },
-    { name: 'Latin-1 Supplement', range: 'U+0080-00FF' },
-    { name: 'Latin Extended-A', range: 'U+0100-017F' },
-    { name: 'Latin Extended-B', range: 'U+0180-024F' },
-    { name: 'IPA Extensions', range: 'U+0250-02AF' },
-    { name: 'Spacing Modifier Letters', range: 'U+02B0-02FF' },
-    { name: 'CJK Symbols and Punctuation', range: 'U+3000-303F' },
-    { name: 'Hiragana', range: 'U+3040-309F' },
-    { name: 'Katakana', range: 'U+30A0-30FF' },
-    { name: 'CJK Unified Ideographs', range: 'U+4E00-9FFF' },
-    { name: 'CJK Compatibility Ideographs', range: 'U+F900-FAFF' }
-  ];
 }
 
 // Unicode block ranges for splitting - load from JSON file or use defaults
@@ -138,19 +115,35 @@ function ensureFontsDir() {
  * @returns {string|null} Path to font file or null if not found
  */
 function findSourceFont(fontFamily, weight, style) {
-  const styleStr = style !== 'normal' ? style.charAt(0).toUpperCase() + style.slice(1) : '';
+  const baseName = `${fontFamily.replace(/\s+/g, '')}`;
+  const isItalic = style === 'italic';
+
+  // 特殊处理：如果是Regular Italic (400 italic)，字体文件通常命名为 "LXGWBright-Italic.ttf"
+  if (weight === '400' && isItalic) {
+    const extensions = ['.ttf', '.woff2', '.woff'];
+    const italicName = `${baseName}-Italic`;
+
+    for (const ext of extensions) {
+      const filePath = path.join(SRC_FONTS_DIR, `${italicName}${ext}`);
+      if (fs.existsSync(filePath)) {
+        console.log(`Found source font: ${filePath}`);
+        return filePath;
+      }
+    }
+  }
+
+  // 处理其他字体权重和样式
+  const styleStr = isItalic ? 'Italic' : '';
   const weightName = weight === '400' ? 'Regular' :
     weight === '700' ? 'Bold' :
       weight === '300' ? 'Light' :
         weight === '500' ? 'Medium' : weight;
 
-  const baseName = `${fontFamily.replace(/\s+/g, '')}`;
-
-  // Check for different name formats and file extensions (woff2, woff, ttf in order of preference)
+  // 检查不同的命名格式和文件扩展名
   const possibleNames = [
-    // Weight as name format (Regular, Bold, etc.)
+    // 标准格式: LXGWBright-Light, LXGWBright-LightItalic, 等
     `${baseName}-${weightName}${styleStr}`,
-    // Weight as number format (400, 700, etc.)
+    // 使用数字格式的权重: LXGWBright-300, LXGWBright-300Italic, 等
     `${baseName}-${weight}${styleStr}`,
   ];
 
@@ -240,7 +233,7 @@ async function buildFont(srcFont, destFont, unicodeRange) {
   // Supported font formats: ttf,woff,woff2
   // pyftsubset command format: pyftsubset [options] font.ttf
   const fontFormat = path.extname(destFont).substring(1);
-  const command = `pyftsubset "${ttfSrcFont}" --output-file="${destFont}" --flavor=${fontFormat} --unicodes=${unicodeRange} --layout-features='*' --no-hinting --ignore-missing-glyphs`;
+  const command = `pyftsubset "${ttfSrcFont}" --output-file="${destFont}" --flavor=${fontFormat} --unicodes=${unicodeRange} --layout-features='*' --no-hinting --desubroutinize --ignore-missing-glyphs`;
 
   try {
     console.log(`Running command: ${command}`);
@@ -294,11 +287,20 @@ async function buildFontVariations(fontConfig) {
       fontWeight === '300' ? 'Light' :
         fontWeight === '500' ? 'Medium' : fontWeight;
 
+  // 添加斜体标识
+  const styleStr = fontStyle === 'italic' ? 'Italic' : '';
+
+  // 修改输出文件名以包含斜体标识
+  // 特殊处理Regular斜体，命名应为LXGWBright-Italic而非LXGWBright-RegularItalic
+  let outputBaseName;
+  if (fontWeight === '400' && fontStyle === 'italic') {
+    outputBaseName = `${fontFamily.replace(/\s+/g, '')}-Italic`;
+  } else {
+    outputBaseName = `${fontFamily.replace(/\s+/g, '')}-${weightName}${styleStr}`;
+  }
+
   for (const [index, rangeObj] of unicodeRanges.entries()) {
     const { name, range } = rangeObj;
-
-    // Create output filenames
-    const outputBaseName = `${fontFamily.replace(/\s+/g, '')}-${weightName}`;
 
     // Generate font files for all formats
     const outputName = `${outputBaseName}.${index}`;
@@ -466,6 +468,41 @@ async function validateUnusedFonts(referencedFonts) {
   }
 }
 
+/**
+ * 清空字体目录中的所有woff和woff2文件
+ * @returns {Promise<void>}
+ */
+async function cleanFontsDirectory() {
+  console.log('Cleaning fonts directory...');
+
+  // 确保fonts目录存在
+  ensureFontsDir();
+
+  try {
+    // 读取fonts目录中的所有文件
+    const files = fs.readdirSync(FONTS_DIR);
+
+    // 计数已删除的文件
+    let deletedCount = 0;
+
+    // 遍历并删除所有.woff和.woff2文件
+    for (const file of files) {
+      const ext = path.extname(file).toLowerCase();
+
+      if (ext === '.woff' || ext === '.woff2') {
+        const filePath = path.join(FONTS_DIR, file);
+        fs.unlinkSync(filePath);
+        deletedCount++;
+      }
+    }
+
+    console.log(`Deleted ${deletedCount} font files from ${FONTS_DIR}`);
+  } catch (error) {
+    console.error(`Error cleaning fonts directory: ${error.message}`);
+    throw error;
+  }
+}
+
 // =======================================================
 // Main Function
 // =======================================================
@@ -475,6 +512,9 @@ async function validateUnusedFonts(referencedFonts) {
  */
 async function main() {
   try {
+    // 清空fonts目录
+    await cleanFontsDirectory();
+
     // Build all fonts
     await buildAllFonts();
 

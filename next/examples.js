@@ -31,30 +31,89 @@ export const lxgwBright = localFont({
   fallback: ['system-ui', 'sans-serif'],
 });
 
+// 如果需要使用所有字重，导入整个字体
+// import 'webfont-lxgw-bright/next/styles.css';
+
+// 或者，可以为每种字重单独配置
+export const lxgwBrightLight = localFont({
+  src: [
+    {
+      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Light.0.woff2',
+      weight: '300',
+      style: 'normal',
+    }
+  ],
+  variable: '--font-lxgw-bright-light',
+  preload: false,
+  display: 'swap',
+  fallback: ['system-ui', 'sans-serif'],
+});
+
+export const lxgwBrightMedium = localFont({
+  src: [
+    {
+      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Medium.0.woff2',
+      weight: '500',
+      style: 'normal',
+    }
+  ],
+  variable: '--font-lxgw-bright-medium',
+  preload: false,
+  display: 'swap',
+  fallback: ['system-ui', 'sans-serif'],
+});
+
+export const lxgwBrightItalic = localFont({
+  src: [
+    {
+      path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Italic.0.woff2',
+      weight: '400',
+      style: 'italic',
+    }
+  ],
+  variable: '--font-lxgw-bright-italic',
+  preload: false,
+  display: 'swap',
+  fallback: ['system-ui', 'sans-serif'],
+});
+
 /**
- * 第2步: 在根布局文件中使用
+ * 第2步: 在布局中使用字体
  * @filename: app/layout.js
  */
-import { lxgwBright } from './fonts';
-import 'webfont-lxgw-bright/next/styles.css'; // 导入切片字体CSS
-
 export default function RootLayout({ children }) {
   return (
-    <html lang="zh-CN" className={lxgwBright.variable}>
+    <html lang="zh-CN" className={`${lxgwBright.variable} ${lxgwBrightLight.variable} ${lxgwBrightMedium.variable} ${lxgwBrightItalic.variable}`}>
       <body>{children}</body>
     </html>
   );
 }
 
 /**
- * 第3步: 在全局CSS或组件中使用
+ * 第3步: 在CSS中使用字体变量
  * @filename: app/globals.css
+ * @example
+ * ```css
+ * body {
+ *   font-family: var(--font-lxgw-bright), system-ui, sans-serif;
+ * }
+ *
+ * /* 使用Light字重 */
+ * .light - text {
+ * font - family: var(--font - lxgw - bright - light), system - ui, sans - serif;
+ * }
+ *
+ * /* 使用Medium字重 */
+ * .medium - text {
+ * font - family: var(--font - lxgw - bright - medium), system - ui, sans - serif;
+ * }
+ *
+ * /* 使用斜体 */
+ * .italic - text {
+ * font - family: var(--font - lxgw - bright - italic), system - ui, sans - serif;
+ * }
+ * ```
  */
-/*
-body {
-  font-family: var(--font-lxgw-bright), sans-serif;
-}
-*/
 
 //==============================================================================
 // 示例 2: Pages Router
@@ -223,10 +282,10 @@ export default function RootLayout({ children }) {
   // 将所有字重变量组合应用到HTML元素
   return (
     <html lang="zh-CN" className={`
-      ${lxgwBrightRegular.variable}
-      ${lxgwBrightMedium.variable}
-      ${lxgwBrightLight.variable}
-    `}>
+      ${ lxgwBrightRegular.variable }
+      ${ lxgwBrightMedium.variable }
+      ${ lxgwBrightLight.variable }
+`}>
       <body>{children}</body>
     </html>
   );

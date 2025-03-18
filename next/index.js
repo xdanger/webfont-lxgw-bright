@@ -13,7 +13,18 @@ export const LXGWBright = 'LXGW Bright';
  * 导出字体文件的路径，供 Next.js 字体加载器使用
  */
 export const fontPath = {
+  // Regular weight (400)
   regular: require.resolve('webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2'),
+  // Light weight (300)
+  light: require.resolve('webfont-lxgw-bright/fonts/LXGWBright-Light.0.woff2'),
+  // Medium weight (500)
+  medium: require.resolve('webfont-lxgw-bright/fonts/LXGWBright-Medium.0.woff2'),
+  // Regular italic
+  italic: require.resolve('webfont-lxgw-bright/fonts/LXGWBright-Italic.0.woff2'),
+  // Light italic
+  lightItalic: require.resolve('webfont-lxgw-bright/fonts/LXGWBright-LightItalic.0.woff2'),
+  // Medium italic
+  mediumItalic: require.resolve('webfont-lxgw-bright/fonts/LXGWBright-MediumItalic.0.woff2'),
 };
 
 /**
@@ -34,6 +45,32 @@ export const fontPath = {
  *       path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Regular.0.woff2',
  *       weight: '400',
  *       style: 'normal',
+ *     },
+ *     // 添加其他字重和风格
+ *     {
+ *       path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Light.0.woff2',
+ *       weight: '300',
+ *       style: 'normal',
+ *     },
+ *     {
+ *       path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Medium.0.woff2',
+ *       weight: '500',
+ *       style: 'normal',
+ *     },
+ *     {
+ *       path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-Italic.0.woff2',
+ *       weight: '400',
+ *       style: 'italic',
+ *     },
+ *     {
+ *       path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-LightItalic.0.woff2',
+ *       weight: '300',
+ *       style: 'italic',
+ *     },
+ *     {
+ *       path: '../node_modules/webfont-lxgw-bright/fonts/LXGWBright-MediumItalic.0.woff2',
+ *       weight: '500',
+ *       style: 'italic',
  *     }
  *   ],
  *   variable: '--font-lxgw-bright',

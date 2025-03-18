@@ -13,18 +13,35 @@ const { execSync } = require('child_process');
 
 // 配置项
 const config = {
-  fontDir: path.resolve(__dirname, '../node_modules/webfont-lxgw-bright/fonts'),
+  fontDir: path.resolve(__dirname, '../../fonts'),
   outputFile: path.resolve(__dirname, '../app/fonts.js'),
-  fontWeights: ['Regular', 'Light', 'Medium'],
+  fontWeights: [
+    'Regular', 'Light', 'Medium',
+    'Italic', 'LightItalic', 'MediumItalic'
+  ],
   fontExportNames: {
     'Regular': 'lxgwBright',
     'Light': 'lxgwBrightLight',
-    'Medium': 'lxgwBrightMedium'
+    'Medium': 'lxgwBrightMedium',
+    'Italic': 'lxgwBrightItalic',
+    'LightItalic': 'lxgwBrightLightItalic',
+    'MediumItalic': 'lxgwBrightMediumItalic'
   },
   fontWeightValues: {
     'Regular': '400',
     'Light': '300',
-    'Medium': '500'
+    'Medium': '500',
+    'Italic': '400',
+    'LightItalic': '300',
+    'MediumItalic': '500'
+  },
+  fontStyleValues: {
+    'Regular': 'normal',
+    'Light': 'normal',
+    'Medium': 'normal',
+    'Italic': 'italic',
+    'LightItalic': 'italic',
+    'MediumItalic': 'italic'
   },
   // 范围编号组，方便添加注释
   rangeGroups: {
@@ -39,14 +56,47 @@ const config = {
 
 /**
  * 获取指定字重的所有字体文件
- * @param {string} weight 字重名称 (Regular|Light|Medium)
+ * @param {string} weight 字重名称 (Regular|Light|Medium|Italic|LightItalic|MediumItalic)
  * @returns {string[]} 字体文件列表
  */
 function getFontFiles(weight) {
   try {
-    // 使用命令行查找所有匹配的.woff2文件并按数字排序
-    const command = `find ${config.fontDir} -name "LXGWBright-${weight}.*.woff2" | sort -V`;
+    // First check if we need to adjust the weight name for certain styles
+    let searchWeight = weight;
+
+    // Adjust the search pattern for italic variants
+    if (weight === 'Italic') {
+      // For Regular Italic, search for files with "Italic" in the name
+      const command = `find ${config.fontDir} -name "LXGWBright-Italic.*.woff2" | sort -V`;
+      const output = execSync(command).toString().trim();
+      if (output) {
+        return output.split('\n').filter(Boolean);
+      }
+    } else if (weight === 'LightItalic') {
+      // For Light Italic
+      const command = `find ${config.fontDir} -name "LXGWBright-LightItalic.*.woff2" | sort -V`;
+      const output = execSync(command).toString().trim();
+      if (output) {
+        return output.split('\n').filter(Boolean);
+      }
+    } else if (weight === 'MediumItalic') {
+      // For Medium Italic
+      const command = `find ${config.fontDir} -name "LXGWBright-MediumItalic.*.woff2" | sort -V`;
+      const output = execSync(command).toString().trim();
+      if (output) {
+        return output.split('\n').filter(Boolean);
+      }
+    }
+
+    // Standard search for regular weights
+    const command = `find ${config.fontDir} -name "LXGWBright-${searchWeight}.*.woff2" | sort -V`;
     const output = execSync(command).toString().trim();
+
+    if (!output) {
+      console.warn(`未找到 ${weight} 字重的字体文件，尝试其他可能的格式...`);
+      return [];
+    }
+
     return output.split('\n').filter(Boolean);
   } catch (error) {
     console.error(`无法获取${weight}字重的字体文件:`, error);
@@ -83,13 +133,17 @@ function camelToKebabCase(str) {
 function generateFontConfig(weight, files) {
   const exportName = config.fontExportNames[weight];
   const fontWeight = config.fontWeightValues[weight];
+  const fontStyle = config.fontStyleValues[weight] || 'normal';
 
   // 正确格式化CSS变量名: 变成 --font-lxgw-bright-light 这种格式
   const cssVarName = `--font-${camelToKebabCase(exportName)}`;
 
   let lastGroupComment = '';
   let srcItems = files.map(file => {
-    const relativePath = `../node_modules/webfont-lxgw-bright/fonts/${path.basename(file)}`;
+    // Use relative path as required by Next.js
+    const fileName = path.basename(file);
+    const relativePath = `../../fonts/${fileName}`; // Reference directly from the fonts directory
+
     const number = extractNumberFromPath(file);
 
     // 检查是否需要添加分组注释
@@ -112,7 +166,7 @@ function generateFontConfig(weight, files) {
       `    {`,
       `      path: '${relativePath}',`,
       `      weight: '${fontWeight}',`,
-      `      style: 'normal',`,
+      `      style: '${fontStyle}',`,
       `    }`
     ].filter(Boolean).join('\n');
   });
