@@ -366,15 +366,24 @@ async function buildAllFonts() {
 
   // Configuration for all font variations to build
   const fontConfigs = [
-    configureLXGWBright({ weight: '400', style: 'normal' }),
-    // Add more configurations for different weights/styles as needed
+    configureLXGWBright({ weight: '400', style: 'normal' }), // Regular
+    configureLXGWBright({ weight: '300', style: 'normal' }), // Light
+    configureLXGWBright({ weight: '500', style: 'normal' }), // Medium
+    configureLXGWBright({ weight: '400', style: 'italic' }), // Regular Italic
+    configureLXGWBright({ weight: '300', style: 'italic' }), // Light Italic
+    configureLXGWBright({ weight: '500', style: 'italic' }), // Medium Italic
   ];
 
   const fontVariants = [];
 
   for (const config of fontConfigs) {
-    const variant = await buildFontVariations(config);
-    fontVariants.push(variant);
+    try {
+      const variant = await buildFontVariations(config);
+      fontVariants.push(variant);
+    } catch (error) {
+      console.error(`Error building font variation: ${error.message}`);
+      console.error(`Skipping ${config.fontFamily} ${config.fontWeight} ${config.fontStyle}`);
+    }
   }
 
   // Generate CSS file
@@ -383,6 +392,78 @@ async function buildAllFonts() {
 
   console.log(`Generated CSS file at ${CSS_FILE}`);
   console.log('All fonts have been built successfully!');
+}
+
+/**
+ * Validates that all font files referenced in the CSS file exist in the fonts directory
+ * @returns {Promise<boolean>} True if all referenced fonts exist
+ */
+async function validateReferencedFonts() {
+  console.log('Validating that all referenced font files exist...');
+  let isValid = true;
+
+  try {
+    // Read the CSS file
+    const cssContent = fs.readFileSync(CSS_FILE, 'utf8');
+
+    // Extract all font file references using regex
+    const fontRegex = /url\(['"]?\.\/(fonts\/[^'"]+)['"]?\)/g;
+    const referencedFonts = new Set();
+    let match;
+
+    while ((match = fontRegex.exec(cssContent)) !== null) {
+      const fontPath = path.join(PACKAGE_ROOT, match[1]);
+      referencedFonts.add(fontPath);
+
+      if (!fs.existsSync(fontPath)) {
+        console.error(`ERROR: Referenced font file does not exist: ${fontPath}`);
+        isValid = false;
+      }
+    }
+
+    if (isValid) {
+      console.log('All referenced font files exist in the fonts directory.');
+    }
+
+    return { isValid, referencedFonts };
+  } catch (error) {
+    console.error(`Error validating referenced fonts: ${error.message}`);
+    return { isValid: false, referencedFonts: new Set() };
+  }
+}
+
+/**
+ * Validates that all font files in the fonts directory are referenced in the CSS file
+ * @param {Set<string>} referencedFonts Set of font paths referenced in the CSS
+ * @returns {boolean} True if all font files are referenced
+ */
+async function validateUnusedFonts(referencedFonts) {
+  console.log('Validating that there are no unused font files...');
+  let isValid = true;
+
+  try {
+    // Get all files in the fonts directory
+    const fontFiles = fs.readdirSync(FONTS_DIR)
+      .filter(fileName => fileName !== '.gitkeep') // Exclude .gitkeep files
+      .map(file => path.join(FONTS_DIR, file));
+
+    // Check for files that aren't referenced in the CSS
+    for (const fontFile of fontFiles) {
+      if (!referencedFonts.has(fontFile)) {
+        console.error(`ERROR: Unused font file found: ${fontFile}`);
+        isValid = false;
+      }
+    }
+
+    if (isValid) {
+      console.log('All font files in the fonts directory are referenced in the CSS.');
+    }
+
+    return isValid;
+  } catch (error) {
+    console.error(`Error validating unused fonts: ${error.message}`);
+    return false;
+  }
 }
 
 // =======================================================
@@ -394,7 +475,19 @@ async function buildAllFonts() {
  */
 async function main() {
   try {
+    // Build all fonts
     await buildAllFonts();
+
+    // Validate fonts
+    const { isValid: referencedValid, referencedFonts } = await validateReferencedFonts();
+    const unusedValid = await validateUnusedFonts(referencedFonts);
+
+    if (!referencedValid || !unusedValid) {
+      console.error('Font validation failed. Please check the errors above.');
+      process.exit(1);
+    }
+
+    console.log('Font validation passed. All font files are correctly referenced and used.');
   } catch (error) {
     console.error('Error building fonts:', error);
     process.exit(1);
