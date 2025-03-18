@@ -8,13 +8,24 @@
 ## 特点
 
 - 将大型字体文件（>4MB）拆分成较小的子集（通常 <200KB)
-- 按Unicode范围进行拆分，确保每个文件大小适合网页加载
+- 按优化的Unicode范围进行拆分，与Google Fonts的切分策略一致
+- 浏览器会自动只加载需要的字体子集，显著提高页面加载性能
 - 支持不同的字重和样式变体
 - 简洁的JavaScript API
-- 浏览器会自动只加载需要的字体子集，提高页面加载性能
 - 支持Next.js优化字体加载
 - 支持多字重混合使用，满足更丰富的排版需求
 - 自动化脚本生成Next.js字体配置，简化开发流程
+
+## Unicode范围优化
+
+原始的字体子集拆分方法使用了任意的Unicode范围划分，导致浏览器需要下载许多不必要的小字体文件。为解决这个问题，我们采用了与Google Fonts一致的优化策略:
+
+- **减少网络请求**：通过与Google Fonts对齐，浏览器可以下载更少的字体子集文件
+- **更好的缓存**：更一致的Unicode范围提高浏览器缓存效果
+- **更快的文本渲染**：文本显示更快，因为优先考虑了必要的字符范围
+- **减少带宽使用**：优化了整体字体下载大小
+
+Unicode范围从Google Fonts的"LXGW WenKai TC"字体CSS提取，共包含112个范围划分。
 
 ## 安装
 
@@ -591,10 +602,13 @@ export default function Page() {
 webfont-lxgw-bright/
 ├── fonts/            - 生成的字体子集文件
 ├── scripts/          - 开发者工具脚本
-│   └── build-fonts.js        - 字体处理脚本（使用fonttools）
+│   ├── build-fonts.js          - 字体处理脚本（使用fonttools）
+│   ├── extract-unicode-ranges.js - 从Google Fonts提取Unicode范围的脚本
+│   └── unicode-ranges.json     - 存储Unicode范围数据
 ├── src/              - 源代码
 │   └── cli.js        - CLI工具
 ├── src-fonts/        - 原始字体文件目录
+├── specs/            - 规范和设计文档
 ├── test/             - 测试工具和示例
 │   ├── index.html            - 基本字体显示测试
 │   ├── performance-test.html - 性能对比测试
@@ -613,6 +627,8 @@ webfont-lxgw-bright/
 
 ### 开发工作流程
 
+#### 基本开发流程
+
 1. 将原始字体文件放入`src-fonts`目录
 2. 安装Python fonttools及其依赖：
 
@@ -627,6 +643,31 @@ webfont-lxgw-bright/
    ```
 
 脚本会处理字体，生成子集文件到`fonts`目录以及CSS文件。
+
+#### Unicode范围优化工作流
+
+如需更新字体子集的Unicode范围划分：
+
+1. 从Google Fonts获取最新的Unicode范围:
+
+   ```bash
+   node scripts/extract-unicode-ranges.js
+   ```
+
+2. 检查生成的`scripts/unicode-ranges.json`文件，确认范围正确
+
+3. 使用优化后的范围生成字体子集:
+
+   ```bash
+   node scripts/build-fonts.js
+   ```
+
+这个优化工作流带来以下好处:
+
+- 减少网络请求，浏览器可以下载更少的字体子集文件
+- 更好的缓存效果
+- 更快的文本渲染
+- 减少总体带宽使用
 
 ### 发布新版本
 
@@ -650,8 +691,16 @@ open test/performance-test.html
 
 更多测试工具的详细信息，请查看 [test/README.md](test/README.md)。
 
-## 许可证
+## 开发文档
 
-本项目基于[SIL Open Font License 1.1](OFL.txt)发布。
+详细的开发和设计文档可在 `specs/` 目录中找到：
+
+- [字体子集化工作流程](specs/font-subsetting-workflow.md) - 详细介绍了字体子集化的技术实现和工作流程
+- [开发者指南](specs/developer-guide.md) - 为开发者提供的使用和集成指南
+- [技术决策说明](specs/technical-decisions.md) - 解释了项目中关键技术选择的原因
+
+## 许可
+
+本项目遵循 [SIL Open Font License](OFL.txt)。
 
 霞鹜晰黑(LXGW Bright)字体版权归属原作者[落霞孤鹜lxgw](https://github.com/lxgw)
